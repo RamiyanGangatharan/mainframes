@@ -37,7 +37,7 @@
       *
       *             PERCENTAGE OF TRANSACTIONS IN EACH TYPE OF PAYMENT
       *
-      *             NUMBER OF TRANSACTIONS IN EACH TYPE OF PAYMENT
+      *             NUMBER OF TRANSACTIONS IN EACH TYPE OF PAYMENT [DONE]
       *                 NOTE: ONLY FOR 'S' AND 'L', NOT 'R'
       *
       *   ANALYZE DATA ['R']:
@@ -77,17 +77,17 @@
 
       * THIS SPLITS UP THE DATA INTO USABLE CHUNKS FROM THE RAW DATA.
        01 INPUT-LINE.
-           05 IL-TRANSACTION-CODE PIC X(1).
-           05 IL-TRANSACTION-AMOUNT PIC 9(5)V99.
-           05 IL-PAYMENT-TYPE PIC X(2).
-           05 IL-STORE-NUMBER PIC X(2).
-           05 IL-INVOICE-NUMBER PIC X(9).
-           05 SPLIT-INVOICE REDEFINES IL-INVOICE-NUMBER.
-                10 INVOICE-PREFIX-1 PIC X(1).
-                10 INVOICE-PREFIX-2 PIC X(1).
-                10 DASH PIC X(1).
-                10 INVOICE-NUMBER PIC X(6).
-           05 IL-SKU PIC X(15).
+          05 IL-TRANSACTION-CODE       PIC X(1).
+          05 IL-TRANSACTION-AMOUNT     PIC 9(5)V99.
+          05 IL-PAYMENT-TYPE           PIC X(2).
+          05 IL-STORE-NUMBER           PIC X(2).
+          05 IL-INVOICE-NUMBER         PIC X(9).
+          05 SPLIT-INVOICE REDEFINES IL-INVOICE-NUMBER.
+             10 INVOICE-PREFIX-1       PIC X(1).
+             10 INVOICE-PREFIX-2       PIC X(1).
+             10 DASH                   PIC X(1).
+             10 INVOICE-NUMBER         PIC X(6).
+          05 IL-SKU                    PIC X(15).
 
         FD OUTPUT-FILE
             RECORDING MODE IS F
@@ -97,7 +97,7 @@
         FD SALE_LAY_OUTFILE
            RECORDING MODE IS F
            RECORD CONTAINS 108 CHARACTERS.
-       01 SALE_LAY_OUTLINE        PIC X(108).
+       01 SALE_LAY_OUTLINE             PIC X(108).
 
        FD RETURNED_OUTFILE
            RECORDING MODE IS F
@@ -106,47 +106,47 @@
 
         WORKING-STORAGE SECTION.
 
-        01 END-OF-FILE                  PIC X(1).
+       01 END-OF-FILE                  PIC X(1).
           88 EOF                                   VALUE 'Y'.
           88 NOT-EOF                               VALUE 'N'.
 
-        01 WS-TRANS-CODE-SALES-OPTIONS  PIC X(1).
-          88 TCSO-SALES                             VALUE 'S'.
-          88 TCSO-LAYAWAYS                          VALUE 'L'.
-          88 TCSO-RETURNED                          VALUE 'R'.
+       01 WS-TRANS-CODE-SALES-OPTIONS  PIC X(1).
+          88 TCSO-SALES                            VALUE 'S'.
+          88 TCSO-LAYAWAYS                         VALUE 'L'.
+          88 TCSO-RETURNED                         VALUE 'R'.
 
-        01 WS-PAYMENT-TYPE-OPTIONS      PIC X(2).
-          88 PTO-DEBIT                              VALUE 'DB'.
-          88 PTO-CREDIT                             VALUE 'CR'.
-          88 PTO-CASH                               VALUE 'CA'.
+       01 WS-PAYMENT-TYPE-OPTIONS      PIC X(2).
+          88 PTO-DEBIT                             VALUE 'DB'.
+          88 PTO-CREDIT                            VALUE 'CR'.
+          88 PTO-CASH                              VALUE 'CA'.
 
-        01 WS-SALES-COUNT               PIC 9(3).
-        01 WS-LAYAWAY-COUNT             PIC 9(3).
-        01 WS-RETURN-COUNT              PIC 9(3).
-        01 WS-SL-TOTAL-COUNT            PIC 9(3).
-        01 WS-TOTAL-ROW-COUNTER         PIC 9(3).
+       01 WS-SALES-COUNT               PIC 9(3).
+       01 WS-LAYAWAY-COUNT             PIC 9(3).
+       01 WS-RETURN-COUNT              PIC 9(3).
+       01 WS-SL-TOTAL-COUNT            PIC 9(3).
+       01 WS-TOTAL-ROW-COUNTER         PIC 9(3).
 
-        01 WS-TOTAL-DEBIT-COUNTER       PIC 9(3).
-        01 WS-TOTAL-CREDIT-COUNTER      PIC 9(3).
-        01 WS-TOTAL-CASH-COUNTER        PIC 9(3).
+       01 WS-TOTAL-DEBIT-COUNTER       PIC 9(3).
+       01 WS-TOTAL-CREDIT-COUNTER      PIC 9(3).
+       01 WS-TOTAL-CASH-COUNTER        PIC 9(3).
 
-        01 WS-SALES-COUNT-STR           PIC Z(3).
-        01 WS-LAYAWAY-COUNT-STR         PIC Z(3).
-        01 WS-RETURN-COUNT-STR          PIC Z(3).
-        01 WS-SL-TOTAL-COUNT-STR        PIC Z(3).
-        01 WS-TOTAL-ROW-COUNTER-STR     PIC Z(3).
+       01 WS-SALES-COUNT-STR           PIC Z(3).
+       01 WS-LAYAWAY-COUNT-STR         PIC Z(3).
+       01 WS-RETURN-COUNT-STR          PIC Z(3).
+       01 WS-SL-TOTAL-COUNT-STR        PIC Z(3).
+       01 WS-TOTAL-ROW-COUNTER-STR     PIC Z(3).
 
-        01 WS-TOTAL-DEBIT-COUNTER-STR   PIC Z(3).
-        01 WS-TOTAL-CREDIT-COUNTER-STR  PIC Z(3).
-        01 WS-TOTAL-CASH-COUNTER-STR    PIC Z(3).
+       01 WS-TOTAL-DEBIT-COUNTER-STR   PIC Z(3).
+       01 WS-TOTAL-CREDIT-COUNTER-STR  PIC Z(3).
+       01 WS-TOTAL-CASH-COUNTER-STR    PIC Z(3).
 
         PROCEDURE DIVISION.
        000-MAIN.
            PERFORM 100-OPEN-FILES.
            PERFORM UNTIL EOF
-                PERFORM 150-READ-FILES
-                PERFORM 200-PROCESS-RECORDS
-                ADD 1 TO WS-TOTAL-ROW-COUNTER
+               PERFORM 150-READ-FILES
+               PERFORM 200-PROCESS-RECORDS
+               ADD 1 TO WS-TOTAL-ROW-COUNTER
            END-PERFORM.
            PERFORM 890-SALES-SUMMARY.
            PERFORM 900-CLOSE-FILES.
@@ -166,54 +166,66 @@
 
        200-PROCESS-RECORDS.
            MOVE IL-TRANSACTION-CODE TO WS-TRANS-CODE-SALES-OPTIONS.
-           MOVE IL-PAYMENT-TYPE TO WS-PAYMENT-TYPE-OPTIONS.
+           MOVE IL-PAYMENT-TYPE     TO WS-PAYMENT-TYPE-OPTIONS.
            PERFORM 210-SPLITTER.
            PERFORM 220-SPLIT-BY-PAYMENT.
 
        210-SPLITTER.
-           IF TCSO-SALES THEN PERFORM 300-SPLIT-SALES
-           ADD 1 TO WS-SALES-COUNT END-IF.
+           IF TCSO-SALES THEN
+              PERFORM 300-SPLIT-SALES
+              ADD 1 TO WS-SALES-COUNT
+           END-IF.
 
-           IF TCSO-LAYAWAYS THEN PERFORM 300-SPLIT-SALES
-           ADD 1 TO WS-LAYAWAY-COUNT END-IF.
+           IF TCSO-LAYAWAYS THEN
+              PERFORM 300-SPLIT-SALES
+              ADD 1 TO WS-LAYAWAY-COUNT
+           END-IF.
 
-           IF TCSO-RETURNED THEN PERFORM 350-SPLIT-RETURNS
-           ADD 1 TO WS-RETURN-COUNT END-IF.
+           IF TCSO-RETURNED THEN
+              PERFORM 350-SPLIT-RETURNS
+              ADD 1 TO WS-RETURN-COUNT
+           END-IF.
 
        220-SPLIT-BY-PAYMENT.
-           IF PTO-DEBIT THEN ADD 1 TO WS-TOTAL-DEBIT-COUNTER END-IF.
-           IF PTO-CREDIT THEN ADD 1 TO WS-TOTAL-CREDIT-COUNTER END-IF.
-           IF PTO-CASH THEN ADD 1 TO WS-TOTAL-CASH-COUNTER END-IF.
+           IF PTO-DEBIT THEN
+              ADD 1 TO WS-TOTAL-DEBIT-COUNTER
+           END-IF.
+           IF PTO-CREDIT THEN
+              ADD 1 TO WS-TOTAL-CREDIT-COUNTER
+           END-IF.
+           IF PTO-CASH THEN
+              ADD 1 TO WS-TOTAL-CASH-COUNTER
+           END-IF.
 
        300-SPLIT-SALES.
-           MOVE INPUT-LINE TO SALE_LAY_OUTLINE.
+           MOVE INPUT-LINE          TO SALE_LAY_OUTLINE.
            WRITE SALE_LAY_OUTLINE.
 
        350-SPLIT-RETURNS.
-           MOVE INPUT-LINE TO RETURNED_OUTLINE.
+           MOVE INPUT-LINE          TO RETURNED_OUTLINE.
            WRITE RETURNED_OUTLINE.
 
 
        890-SALES-SUMMARY.
-           MOVE WS-SALES-COUNT TO WS-SALES-COUNT-STR.
-           MOVE WS-LAYAWAY-COUNT TO WS-LAYAWAY-COUNT-STR.
-           MOVE WS-RETURN-COUNT TO WS-RETURN-COUNT-STR.
+           MOVE WS-SALES-COUNT      TO WS-SALES-COUNT-STR.
+           MOVE WS-LAYAWAY-COUNT    TO WS-LAYAWAY-COUNT-STR.
+           MOVE WS-RETURN-COUNT     TO WS-RETURN-COUNT-STR.
 
       *    SALES
            MOVE "             SALES COUNT: " TO OUTPUT-LINE(1:25).
-           MOVE WS-SALES-COUNT-STR TO OUTPUT-LINE(27:5).
+           MOVE WS-SALES-COUNT-STR           TO OUTPUT-LINE(27:5).
            WRITE OUTPUT-LINE.
 
       *    LAYAWAYS
            MOVE "           LAYAWAY COUNT: " TO OUTPUT-LINE(1:25).
-           MOVE WS-LAYAWAY-COUNT-STR TO OUTPUT-LINE(27:5).
+           MOVE WS-LAYAWAY-COUNT-STR         TO OUTPUT-LINE(27:5).
            WRITE OUTPUT-LINE.
 
       *    SALES AND LAYAWAYS
            ADD WS-SALES-COUNT
-           TO WS-LAYAWAY-COUNT
-           GIVING WS-SL-TOTAL-COUNT.
-           MOVE WS-SL-TOTAL-COUNT TO WS-SL-TOTAL-COUNT-STR.
+              TO WS-LAYAWAY-COUNT
+              GIVING WS-SL-TOTAL-COUNT.
+           MOVE WS-SL-TOTAL-COUNT            TO WS-SL-TOTAL-COUNT-STR.
 
            MOVE "TOTAL SALES AND LAYAWAYS: " TO OUTPUT-LINE(1:25).
            MOVE WS-SL-TOTAL-COUNT-STR TO OUTPUT-LINE(27:5).
@@ -225,9 +237,9 @@
            WRITE OUTPUT-LINE.
 
       *    TOTAL ROWS
-           MOVE WS-TOTAL-ROW-COUNTER TO WS-TOTAL-ROW-COUNTER-STR.
+           MOVE WS-TOTAL-ROW-COUNTER        TO WS-TOTAL-ROW-COUNTER-STR.
            MOVE "      TOTAL ROWS COUNTED: " TO OUTPUT-LINE(1:25).
-           MOVE WS-TOTAL-ROW-COUNTER-STR TO OUTPUT-LINE(27:5).
+           MOVE WS-TOTAL-ROW-COUNTER-STR    TO OUTPUT-LINE(27:5).
            WRITE OUTPUT-LINE.
 
       *    CASH CREDIT DEBIT COUNTERS
@@ -235,18 +247,18 @@
            WRITE OUTPUT-LINE.
 
            MOVE WS-TOTAL-DEBIT-COUNTER TO WS-TOTAL-DEBIT-COUNTER-STR.
-           MOVE "   TOTAL DEBIT PURCHASES: " TO OUTPUT-LINE (1:25).
-           MOVE WS-TOTAL-DEBIT-COUNTER-STR TO OUTPUT-LINE(27:5).
+           MOVE "   TOTAL DEBIT PURCHASES: " TO OUTPUT-LINE(1:25).
+           MOVE WS-TOTAL-DEBIT-COUNTER-STR   TO OUTPUT-LINE(27:5).
            WRITE OUTPUT-LINE.
 
            MOVE WS-TOTAL-CREDIT-COUNTER TO WS-TOTAL-CREDIT-COUNTER-STR.
-           MOVE "  TOTAL CREDIT PURCHASES: " TO OUTPUT-LINE (1:25).
-           MOVE WS-TOTAL-CREDIT-COUNTER-STR TO OUTPUT-LINE(27:5).
+           MOVE "  TOTAL CREDIT PURCHASES: " TO OUTPUT-LINE(1:25).
+           MOVE WS-TOTAL-CREDIT-COUNTER-STR  TO OUTPUT-LINE(27:5).
            WRITE OUTPUT-LINE.
 
            MOVE WS-TOTAL-CASH-COUNTER TO WS-TOTAL-CASH-COUNTER-STR.
-           MOVE "    TOTAL CASH PURCHASES: " TO OUTPUT-LINE (1:25).
-           MOVE WS-TOTAL-CASH-COUNTER-STR TO OUTPUT-LINE (27:5).
+           MOVE "    TOTAL CASH PURCHASES: " TO OUTPUT-LINE(1:25).
+           MOVE WS-TOTAL-CASH-COUNTER-STR    TO OUTPUT-LINE(27:5).
            WRITE OUTPUT-LINE.
 
        900-CLOSE-FILES.
