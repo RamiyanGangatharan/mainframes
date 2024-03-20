@@ -22,15 +22,15 @@ This course also emphasizes several essential employability skills (EES), such a
 Projects are evaluated based on a variety of criteria including code syntax, functionality, documentation, and the ability to meet specified requirements. Assignments contribute to the overall course grade, with detailed feedback provided to foster improvement.
 
 ##Repository Structure
-Assignment 1: 
-Assignment 2:
-Assignment 3:
-Assignment 4:
-Assignment 5:
-Assignment 6
-Assignment 7:
-Assignment 8:
-Assignment 9:
+- Assignment 1: 
+- Assignment 2:
+- Assignment 3:
+- Assignment 4:
+- Assignment 5:
+- Assignment 6:
+- Assignment 7:
+- Assignment 8:
+- Assignment 9:
 
 ##Getting Started
 To get started with these projects, clone this repository and ensure you have the required COBOL compiler and IDE setup. Each project folder contains a README with specific instructions on how to compile and run the projects, along with the objectives and key learning points.
