@@ -115,17 +115,17 @@
           88 TCSO-LAYAWAYS                          VALUE 'L'.
           88 TCSO-RETURNED                          VALUE 'R'.
 
-        01 WS-SALES-COUNT               PIC 9(5).
-        01 WS-LAYAWAY-COUNT             PIC 9(5).
-        01 WS-RETURN-COUNT              PIC 9(5).
-        01 WS-SL-TOTAL-COUNT            PIC 9(5).
-        01 WS-TOTAL-ROW-COUNTER         PIC 9(5).
+        01 WS-SALES-COUNT               PIC 9(3).
+        01 WS-LAYAWAY-COUNT             PIC 9(3).
+        01 WS-RETURN-COUNT              PIC 9(3).
+        01 WS-SL-TOTAL-COUNT            PIC 9(3).
+        01 WS-TOTAL-ROW-COUNTER         PIC 9(3).
 
-        01 WS-SALES-COUNT-STR           PIC Z(5).
-        01 WS-LAYAWAY-COUNT-STR         PIC Z(5).
-        01 WS-RETURN-COUNT-STR          PIC Z(5).
-        01 WS-SL-TOTAL-COUNT-STR        PIC Z(5).
-        01 WS-TOTAL-ROW-COUNTER-STR     PIC Z(5).
+        01 WS-SALES-COUNT-STR           PIC Z(3).
+        01 WS-LAYAWAY-COUNT-STR         PIC Z(3).
+        01 WS-RETURN-COUNT-STR          PIC Z(3).
+        01 WS-SL-TOTAL-COUNT-STR        PIC Z(3).
+        01 WS-TOTAL-ROW-COUNTER-STR     PIC Z(3).
 
         PROCEDURE DIVISION.
        000-MAIN.
@@ -179,44 +179,34 @@
            MOVE WS-RETURN-COUNT TO WS-RETURN-COUNT-STR.
 
       *    SALES
-           MOVE "SALES COUNT:" TO OUTPUT-LINE.
-           WRITE OUTPUT-LINE.
-
-           MOVE WS-SALES-COUNT-STR TO OUTPUT-LINE.
+           MOVE "             SALES COUNT: " TO OUTPUT-LINE(1:25).
+           MOVE WS-SALES-COUNT-STR TO OUTPUT-LINE(27:5).
            WRITE OUTPUT-LINE.
 
       *    LAYAWAYS
-           MOVE "LAYAWAY COUNT:" TO OUTPUT-LINE.
-           WRITE OUTPUT-LINE.
-
-           MOVE WS-LAYAWAY-COUNT-STR TO OUTPUT-LINE.
+           MOVE "           LAYAWAY COUNT: " TO OUTPUT-LINE(1:25).
+           MOVE WS-LAYAWAY-COUNT-STR TO OUTPUT-LINE(27:5).
            WRITE OUTPUT-LINE.
 
       *    SALES AND LAYAWAYS
-           ADD WS-SALES-COUNT TO WS-LAYAWAY-COUNT GIVING
-           WS-SL-TOTAL-COUNT.
-
-           MOVE "TOTAL SALES AND LAYAWAYS:" TO OUTPUT-LINE.
-           WRITE OUTPUT-LINE.
-
+           ADD WS-SALES-COUNT
+           TO WS-LAYAWAY-COUNT
+           GIVING WS-SL-TOTAL-COUNT.
            MOVE WS-SL-TOTAL-COUNT TO WS-SL-TOTAL-COUNT-STR.
-           MOVE WS-SL-TOTAL-COUNT-STR TO OUTPUT-LINE.
+
+           MOVE "TOTAL SALES AND LAYAWAYS: " TO OUTPUT-LINE(1:25).
+           MOVE WS-SL-TOTAL-COUNT-STR TO OUTPUT-LINE(27:5).
            WRITE OUTPUT-LINE.
 
       *    RETURNS
-           MOVE "RETURN COUNT:" TO OUTPUT-LINE.
-           WRITE OUTPUT-LINE.
-
-           MOVE WS-RETURN-COUNT-STR TO OUTPUT-LINE.
+           MOVE "            RETURN COUNT: " TO OUTPUT-LINE(1:25).
+           MOVE WS-RETURN-COUNT-STR TO OUTPUT-LINE(27:5).
            WRITE OUTPUT-LINE.
 
       *    TOTAL ROWS
-
-           MOVE "TOTAL ROWS COUNTED:" TO OUTPUT-LINE.
-           WRITE OUTPUT-LINE.
-
            MOVE WS-TOTAL-ROW-COUNTER TO WS-TOTAL-ROW-COUNTER-STR.
-           MOVE WS-TOTAL-ROW-COUNTER-STR TO OUTPUT-LINE.
+           MOVE "      TOTAL ROWS COUNTED: " TO OUTPUT-LINE(1:25).
+           MOVE WS-TOTAL-ROW-COUNTER-STR TO OUTPUT-LINE(27:5).
            WRITE OUTPUT-LINE.
 
        900-CLOSE-FILES.
