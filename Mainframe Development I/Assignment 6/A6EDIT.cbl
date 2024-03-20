@@ -1,0 +1,326 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. A6EDIT.
+        DATE-WRITTEN. MARCH 4, 2023.
+        AUTHOR. RAMIYAN GANGATHARAN.
+      * DESCRIPTION: THE COBOL FILE FOR ASSIGNMENT 6 [REDO].
+      * IT IS TO TAKE AN INPUT FILE, VALIDATE IT AGAINST A CERTAIN
+      * CRITERIA, THEN SPLIT THE FILE INTO THREE. THE FIRST FILE IS FOR
+      * VALID DATA, THE SECOND FILE IS FOR INVALID DATA, THEN THE THIRD
+      * FILE IS THE ERROR REPORT CONTAINING THE ROW, THE ERROR CODE, AND
+      * THE COUNT OF HOW MANY WERE VALID, INVALID, AND ROWS PROCESSED.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        INPUT-OUTPUT SECTION.
+        FILE-CONTROL.
+            SELECT INPUT-FILE
+                ASSIGN TO "INFILE"
+                ORGANIZATION IS SEQUENTIAL.
+
+            SELECT OUTPUT-FILE
+                ASSIGN TO "OUTFILE"
+                ORGANIZATION IS SEQUENTIAL.
+
+            SELECT VALID-OUTPUT-FILE
+                ASSIGN TO "VALID"
+                ORGANIZATION IS SEQUENTIAL.
+
+            SELECT INVALID-OUTPUT-FILE
+                ASSIGN TO "INVALID"
+                ORGANIZATION IS SEQUENTIAL.
+
+        DATA DIVISION.
+        FILE SECTION.
+
+        FD INPUT-FILE
+            RECORDING MODE IS F
+            RECORD CONTAINS 36 CHARACTERS.
+
+      * THIS SPLITS UP THE DATA INTO USABLE CHUNKS FROM THE RAW DATA.
+       01 INPUT-LINE.
+          05 IL-TRANSACTION-CODE       PIC X(1).
+          05 IL-TRANSACTION-AMOUNT     PIC 9(5)V99.
+          05 IL-PAYMENT-TYPE           PIC X(2).
+          05 IL-STORE-NUMBER           PIC X(2).
+          05 IL-INVOICE-NUMBER         PIC X(9).
+          05 EDITABLE-INVOICE REDEFINES IL-INVOICE-NUMBER.
+             10 R-PREFIX               PIC X(2).
+             10 R-DASH                 PIC X(1)    VALUE "-".
+             10 R-INVOICE-NUMBER       PIC 9(6).
+          05 IL-SKU                    PIC X(15).
+
+        FD OUTPUT-FILE
+            RECORDING MODE IS F
+            RECORD CONTAINS 108 CHARACTERS.
+       01 OUTPUT-LINE                  PIC X(108).
+
+        FD VALID-OUTPUT-FILE
+            RECORDING MODE IS F
+            RECORD CONTAINS 108 CHARACTERS.
+       01 VALID-OUTPUT-LINE            PIC X(108).
+
+        FD INVALID-OUTPUT-FILE
+            RECORDING MODE IS F
+            RECORD CONTAINS 108 CHARACTERS.
+       01 INVALID-OUTPUT-LINE          PIC X(108).
+
+        WORKING-STORAGE SECTION.
+
+      * FLAG TO INDICATE THE END OF THE FILE.
+       01 END-OF-FILE                  PIC X(1).
+          88 EOF                                   VALUE 'Y'.
+          88 NOT-EOF                               VALUE 'N'.
+
+      * THIS LEVEL 88 IS USED TO DETERMINE WHAT TRANS CODE IS VALID.
+       01 WS-VALID-TRANSACTION-CODES   PIC X(1).
+          88 TRANSACTION-CODES VALUES ARE 'S', 'R', 'L'.
+
+      * THIS LEVEL 88 IS USED TO DETERMINE WHAT PAYMENT TYPE IS VALID.
+       01 WS-VALID-PAYMENT-TYPES       PIC X(2).
+          88 PAYMENT-TYPES VALUES ARE 'CA', 'CR', 'DB'.
+
+      * THIS LEVEL 88 IS USED TO DETERMINE WHAT STORE NUMBER IS VALID.
+       01 WS-VALID-STORE-NUMBERS       PIC 9(2).
+          88 STORE-NUMBERS VALUES ARE 01, 02, 03, 04, 05, 12.
+
+      * THIS LEVEL 88 IS USED TO DETERMINE WHAT INVOICE PREFIX IS VALID.
+       01 WS-INVALID-INVOICE-PREFIXES  PIC X(2).
+          88 INVALID-PREFIXES VALUES ARE 'AA', 'BB', 'CC', 'DD', 'EE'.
+
+       01 WS-VALID-PREFIXES REDEFINES WS-INVALID-INVOICE-PREFIXES.
+          05 WS-INVALID-PRE-1          PIC X(1).
+             88 INVALID-PRE-1 VALUES ARE 'A', 'B', 'C', 'D', 'E'.
+
+          05 WS-INVALID-PRE-2          PIC X(1).
+             88 INVALID-PRE-2 VALUES ARE 'A', 'B', 'C', 'D', 'E'.
+
+      *   THIS LEVEL 88 IS USED TO DETERMINE WHAT INVOICE NUM IS VALID.
+       01 WS-VALID-INVOICE-NUMBERS     PIC 9(6).
+          88 VALID-INVOICE-NUMBERS VALUES ARE 100000 THROUGH 900000.
+
+      * FLAG TO DETERMINE IF A SKU IS VALID.
+       01 WS-VALID-SKU-FLAG            PIC X(1).
+          88 VALID-SKU                             VALUE 'Y'.
+          88 INVALID-SKU                           VALUE 'N'.
+
+      * THIS IS USED AS A COMPARISON VARIABLE TO CHECK IF SKU IS BLANK.
+       01 WS-SKU-BLANK                 PIC X(15).
+          88 SKU-BLANK                             VALUE SPACES.
+
+      * THIS FLAG CHECKS IF THE RECORD IS VALID AFTER VALIDATION.
+       01 WS-VALID-RECORD-FLAG         PIC X(1).
+          88 VALID-RECORD                          VALUE 'Y'.
+          88 INVALID-RECORD                        VALUE 'N'.
+
+       01 WS-RECORD-WRITTEN            PIC X(1)    VALUE 'N'.
+          88 RECORD-WRITTEN-FLAG                   VALUE 'Y'.
+          88 RECORD-NOT-WRITTEN-FLAG               VALUE 'N'.
+
+      * MAKES DATA *PRETTY*
+       01 WS-DETAIL.
+          05 FILLER                    PIC X(5)    VALUE SPACES.
+          05 WSD-TRANSACTION-CODE      PIC X(1).
+          05 WSD-TRANSACTION-AMOUNT    PIC Z(9)V99.
+          05 FILLER                    PIC X(5)    VALUE SPACES.
+          05 WSD-PAYMENT-TYPE          PIC X(2).
+          05 FILLER                    PIC X(5)    VALUE SPACES.
+          05 WSD-STORE-NUMBER          PIC X(2).
+          05 FILLER                    PIC X(5)    VALUE SPACES.
+          05 WSD-INVOICE-PREFIX        PIC X(2).
+          05 FILLER                    PIC X(1)    VALUE "-".
+          05 WSD-INVOICE-NUMBER        PIC 9(6).
+          05 FILLER                    PIC X(4)    VALUE SPACES.
+          05 WSD-SKU                   PIC X(15).
+
+       01 TOTAL-ROWS-COUNT             PIC 9(5)    VALUE 0.
+       01 VALID-ROWS-COUNT             PIC 9(5)    VALUE 0.
+       01 INVALID-ROWS-COUNT           PIC 9(5)    VALUE 0.
+
+       01 TOTAL-ROWS-COUNT-STR         PIC Z(5).
+       01 VALID-ROWS-COUNT-STR         PIC Z(5).
+       01 INVALID-ROWS-COUNT-STR       PIC Z(5).
+       01 WS-FORMAT-TOTAL              PIC X(80)
+           VALUE "TOTAL ROWS PROCESSED: ".
+       01 WS-FORMAT-VALID              PIC X(80)   VALUE "VALID ROWS: ".
+       01 WS-FORMAT-INVALID            PIC X(80)   VALUE
+                                                       "INVALID ROWS: ".
+
+        PROCEDURE DIVISION.
+       000-MAIN.
+           PERFORM 100-OPEN-FILES.
+           PERFORM UNTIL EOF
+               PERFORM 150-READ-FILES
+               PERFORM 300-VALIDATION
+               SET RECORD-NOT-WRITTEN-FLAG TO TRUE
+           END-PERFORM.
+           PERFORM 800-WRITE-SUMMARY
+           PERFORM 900-CLOSE-FILES.
+           GOBACK.
+
+       100-OPEN-FILES.
+           OPEN INPUT INPUT-FILE.
+           OPEN OUTPUT OUTPUT-FILE.
+           OPEN OUTPUT VALID-OUTPUT-FILE.
+           OPEN OUTPUT INVALID-OUTPUT-FILE.
+
+       150-READ-FILES.
+           READ INPUT-FILE
+           AT END
+              SET EOF TO TRUE
+           NOT AT END
+               SET
+                  RECORD-NOT-WRITTEN-FLAG TO TRUE
+               ADD 1 TO TOTAL-ROWS-COUNT
+               PERFORM 200-PROCESS-RECORDS
+           END-READ.
+
+       200-PROCESS-RECORDS.
+           MOVE IL-TRANSACTION-CODE     TO WSD-TRANSACTION-CODE.
+           MOVE IL-TRANSACTION-AMOUNT   TO WSD-TRANSACTION-AMOUNT.
+           MOVE IL-PAYMENT-TYPE         TO WSD-PAYMENT-TYPE.
+           MOVE IL-STORE-NUMBER         TO WSD-STORE-NUMBER.
+           MOVE R-PREFIX                TO WSD-INVOICE-PREFIX.
+           MOVE R-INVOICE-NUMBER        TO WSD-INVOICE-NUMBER.
+           MOVE IL-SKU                  TO WSD-SKU.
+
+       300-VALIDATION.
+           SET VALID-RECORD             TO TRUE.
+           MOVE WSD-TRANSACTION-CODE    TO WS-VALID-TRANSACTION-CODES.
+           MOVE WSD-PAYMENT-TYPE        TO WS-VALID-PAYMENT-TYPES.
+           MOVE WSD-STORE-NUMBER        TO WS-VALID-STORE-NUMBERS.
+           MOVE WSD-INVOICE-PREFIX      TO WS-INVALID-INVOICE-PREFIXES.
+           MOVE WSD-INVOICE-NUMBER      TO WS-VALID-INVOICE-NUMBERS.
+           MOVE WSD-SKU                 TO WS-SKU-BLANK.
+
+      *    TRANSACTION CODE VALIDATION [7 INVALID, 148 VALID]
+           IF NOT TRANSACTION-CODES THEN
+              SET INVALID-RECORD TO TRUE
+              MOVE "     ERROR: INVALID TRANSACTION CODE." TO
+                 OUTPUT-LINE
+              WRITE OUTPUT-LINE
+           END-IF.
+
+      *    PAYMENT TYPE VALIDATION [16 INVALID, 137 VALID]
+           IF NOT PAYMENT-TYPES THEN
+              SET INVALID-RECORD TO TRUE
+              MOVE "     ERROR: INVALID PAYMENT TYPE." TO OUTPUT-LINE
+              WRITE OUTPUT-LINE
+           END-IF.
+
+      *    STORE NUMBER VALIDATION [21 INVALID, 132 VALID]
+           IF NOT STORE-NUMBERS THEN
+              SET INVALID-RECORD TO TRUE
+              MOVE "     ERROR: INVALID STORE NUMBER." TO OUTPUT-LINE
+              WRITE OUTPUT-LINE
+           END-IF.
+
+      *    INVOICE PREFIX VALIDATION [37 INVALID, 116 VALID]
+           IF INVALID-PREFIXES THEN
+              SET INVALID-RECORD TO TRUE
+              MOVE "     ERROR: INVALID INVOICE PREFIX." TO OUTPUT-LINE
+              WRITE OUTPUT-LINE
+           END-IF.
+
+           IF NOT INVALID-PRE-1 OR NOT INVALID-PRE-2 THEN
+              SET
+                 INVALID-RECORD TO TRUE
+              MOVE
+                 "     ERROR: INVALID INVOICE PREFIX." TO OUTPUT-LINE
+              WRITE
+                 OUTPUT-LINE
+           END-IF.
+
+      *    INVOICE PREFIX ALPHABETIC VALIDATION [37 INVALID, 116 VALID]
+           IF R-PREFIX NOT ALPHABETIC THEN
+              SET INVALID-RECORD TO TRUE
+              MOVE "     ERROR: PREFIX NOT ALPHABETIC." TO OUTPUT-LINE
+              WRITE OUTPUT-LINE
+           END-IF
+      *
+      *    INVOICE DASH VALIDATION [37 INVALID, 116 VALID]
+           IF R-DASH NOT = '-' THEN
+              SET INVALID-RECORD TO TRUE
+              MOVE "     ERROR: NO DASH (-) IN INVOICE NUMBER."
+                 TO OUTPUT-LINE
+              WRITE OUTPUT-LINE
+           END-IF.
+
+      *    INVOICE NUMBER RANGE VALIDATION [45 INVALID, 108 VALID]
+           IF R-INVOICE-NUMBER > 900000 OR R-INVOICE-NUMBER < 100000
+              THEN
+              SET INVALID-RECORD TO TRUE
+              MOVE
+                 "     ERROR: INVOICE OUT OF RANGE" TO OUTPUT-LINE
+              WRITE OUTPUT-LINE
+           END-IF.
+      *
+      *    INVOICE NUMBER ISNUMERIC VALIDATION [48 INVALID, 105 VALID]
+           IF R-INVOICE-NUMBER IS NOT NUMERIC THEN
+              SET INVALID-RECORD
+                 TO TRUE
+              MOVE "     ERROR: INVOICE NUMBER IS NOT NUMERIC."
+                 TO OUTPUT-LINE
+              WRITE OUTPUT-LINE
+           END-IF.
+      *
+      *    SKU VALIDATION [52 INVALID, 101 VALID]
+           IF SKU-BLANK THEN
+              SET INVALID-RECORD TO TRUE
+              MOVE "     ERROR: SKU DOES NOT EXIST." TO OUTPUT-LINE
+              WRITE OUTPUT-LINE
+           END-IF.
+
+           IF INVALID-RECORD AND RECORD-NOT-WRITTEN-FLAG THEN
+              PERFORM
+                 350-SPLIT-INVALID-RECORDS
+              SET RECORD-WRITTEN-FLAG TO TRUE
+              ADD 1 TO INVALID-ROWS-COUNT
+           END-IF.
+
+           IF VALID-RECORD AND RECORD-NOT-WRITTEN-FLAG THEN
+              PERFORM 400-SPLIT-VALID-RECORDS
+              ADD 1 TO VALID-ROWS-COUNT
+           END-IF.
+
+       350-SPLIT-INVALID-RECORDS.
+           MOVE SPACES                  TO OUTPUT-LINE.
+           MOVE WS-DETAIL               TO OUTPUT-LINE.
+           WRITE OUTPUT-LINE.
+           MOVE ALL '_'                 TO OUTPUT-LINE.
+           WRITE OUTPUT-LINE.
+           MOVE INPUT-LINE              TO INVALID-OUTPUT-LINE.
+           WRITE INVALID-OUTPUT-LINE.
+
+       400-SPLIT-VALID-RECORDS.
+           MOVE INPUT-LINE              TO VALID-OUTPUT-LINE.
+           WRITE VALID-OUTPUT-LINE.
+
+       800-WRITE-SUMMARY.
+           MOVE TOTAL-ROWS-COUNT        TO TOTAL-ROWS-COUNT-STR.
+           MOVE VALID-ROWS-COUNT        TO VALID-ROWS-COUNT-STR.
+           MOVE INVALID-ROWS-COUNT      TO INVALID-ROWS-COUNT-STR.
+
+           MOVE SPACES                  TO OUTPUT-LINE.
+           WRITE OUTPUT-LINE.
+
+           MOVE WS-FORMAT-TOTAL         TO OUTPUT-LINE.
+           MOVE TOTAL-ROWS-COUNT-STR    TO OUTPUT-LINE(25:5).
+           WRITE OUTPUT-LINE.
+
+           MOVE WS-FORMAT-VALID         TO OUTPUT-LINE.
+           MOVE VALID-ROWS-COUNT-STR    TO OUTPUT-LINE(25:5).
+           WRITE OUTPUT-LINE.
+
+           MOVE WS-FORMAT-INVALID       TO OUTPUT-LINE.
+           MOVE INVALID-ROWS-COUNT-STR  TO OUTPUT-LINE(25:5).
+           WRITE OUTPUT-LINE.
+
+
+       900-CLOSE-FILES.
+           CLOSE INPUT-FILE.
+           CLOSE OUTPUT-FILE.
+           CLOSE VALID-OUTPUT-FILE.
+           CLOSE INVALID-OUTPUT-FILE.
+
+        END PROGRAM A6EDIT.
