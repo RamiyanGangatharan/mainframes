@@ -45,7 +45,7 @@ Projects are evaluated based on a variety of criteria including code syntax, fun
 - **Input:** Sales data including employee number, sales amount, and commission rates.
 - **Output:** Commission report for each salesperson detailing earned and paid commissions, with bonuses applied where appropriate.
 - **Key Concepts:** Complex conditionals, calculations, loop iterations.
-- 
+  
 ### Assignment 4: Salary Report
 - **Objective:** Generate a salary report with increases based on tenure and education level.
 - **Input:** Employee data including education code, years of service, and current salary.
