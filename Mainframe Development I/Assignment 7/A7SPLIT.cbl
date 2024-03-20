@@ -2,7 +2,7 @@
         PROGRAM-ID. A7SPLIT.
         DATE-WRITTEN. MARCH 20, 2023.
         AUTHOR. RAMIYAN GANGATHARAN.
-      * DESCRIPTION:
+      * DESCRIPTION: COBOL FILE FOR ASSIGNMENT 7.
 
         ENVIRONMENT DIVISION.
         CONFIGURATION SECTION.
@@ -13,41 +13,36 @@
       *'S' = SALE
       *'R' = RETURN
       *
-      *    INITIALIZE INPUTS AND OUTPUTS [DONE]
-      *    SPLIT UP DATA INTO CHUNKS OF INFORMATION [DONE]
-      *LOOP THRU THE RECORDS IN THE FILE [DONE]
-      *DURING LOOP: [DONE]
+      *    INITIALIZE INPUTS AND OUTPUTS                        [DONE]
+      *    SPLIT UP DATA INTO CHUNKS OF INFORMATION             [DONE]
+      *LOOP THRU THE RECORDS IN THE FILE                        [DONE]
+      *DURING LOOP:                                             [DONE]
       *    WRITE TO S&L RECORDS FILE IF TRANS-CODE = 'S' OR 'L' [DONE]
-      *    WRITE TO RETURNS FILE IF TRANS-CODE = 'R' [DONE]
+      *    WRITE TO RETURNS FILE IF TRANS-CODE = 'R'            [DONE]
       *AFTER LOOP:
       *    ANALYZE DATA ['S' OR 'L']:
       *         TRANS-CODE = 'S' OR 'L'
-      *             TOTAL NUMBER OF 'S' AND 'L' RECORDS [DONE]
-      *             TOTAL AMOUNT OF 'S' AND 'L' RECORDS
-      *
-      *             TOTAL NUMBER OF 'S' RECORDS [DONE]
-      *             TOTAL AMOUNT OF 'S' RECORDS
-      *
-      *             TOTAL NUMBER OF 'L' RECORDS [DONE]
-      *             TOTAL AMOUNT OF 'L' RECORDS
-      *
-      *             TOTAL RECORD COUNT [DONE]
-      *
-      *             TOTAL AMOUNT FOR EACH STORE
-      *
-      *             PERCENTAGE OF TRANSACTIONS IN EACH TYPE OF PAYMENT
-      *
-      *             NUMBER OF TRANSACTIONS IN EACH TYPE OF PAYMENT [DONE]
+      *             TOTAL NUMBER OF 'S' AND 'L' RECORDS         [DONE]
+      *             TOTAL AMOUNT OF 'S' AND 'L' RECORDS         [WIP]
+      *             TOTAL NUMBER OF 'S' RECORDS                 [DONE]
+      *             TOTAL AMOUNT OF 'S' RECORDS                 [WIP]
+      *             TOTAL NUMBER OF 'L' RECORDS                 [DONE]
+      *             TOTAL AMOUNT OF 'L' RECORDS                 [WIP]
+      *             TOTAL RECORD COUNT                          [DONE]
+      *             TOTAL AMOUNT FOR EACH STORE                 [WIP]
+      *          PERCENTAGE OF TRANSACTIONS PER PAYMENT TYPE    [WIP]
+      *          NUMBER OF TRANSACTIONS IN EACH TYPE OF PAYMENT [DONE]
       *                 NOTE: ONLY FOR 'S' AND 'L', NOT 'R'
       *
       *   ANALYZE DATA ['R']:
-      *         TOTAL NUMBER OF 'R' RECORDS [DONE]
-      *         TOTAL AMOUNT OF 'R' RECORDS FOR EACH STORE
-      *         TOTAL NUMBER OF 'R' RECORDS
-      *         TOTAL AMOUNT OF 'R' RECORDS
+      *         TOTAL NUMBER OF 'R' RECORDS                     [DONE]
+      *         TOTAL AMOUNT OF 'R' RECORDS FOR EACH STORE      [WIP]
+      *         TOTAL NUMBER OF 'R' RECORDS                     [WIP]
+      *         TOTAL AMOUNT OF 'R' RECORDS                     [WIP]
       *
       *   ANALYZE DATA ['S' OR 'L' OR 'R']:
       *         GRAND TOTAL = (('S' TOTAL + 'L' TOTAL) - 'R' TOTAL)
+      *         [WIP]
 
 
         INPUT-OUTPUT SECTION.
