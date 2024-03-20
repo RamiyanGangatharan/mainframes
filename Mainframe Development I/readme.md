@@ -1,6 +1,8 @@
 # INFT 2200 (MAINFRAME DEVELOPMENT I)
 
 ## Overview
+COBOL (Common Business-Oriented Language) has been a cornerstone of business computing since its inception in 1959. Today, it continues to power significant portions of the global economy, particularly in banking, insurance, and government sectors. These projects within the INFT 2200 course offer a hands-on approach to mastering COBOL, enabling students to contribute to and innovate within these critical industries.
+
 This repository contains a collection of COBOL programming projects developed as part of the INFT 2200 course - Mainframe Development I, offered at Durham College during the 2023-2024 academic year. The course serves as an introduction to developing application programs and systems for Mainframe computing, focusing on COBOL application programming. It covers language basics, control structures, multiple output files, minor totals, and arrays, with an emphasis on lab problems to provide a solid foundation in problem analysis, program design, and implementation.
 
 ## Course Description
