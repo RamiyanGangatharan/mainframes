@@ -7,44 +7,6 @@
         ENVIRONMENT DIVISION.
         CONFIGURATION SECTION.
 
-      * TO DO LIST:
-      *
-      *'L' = LAYAWAY
-      *'S' = SALE
-      *'R' = RETURN
-      *
-      *    INITIALIZE INPUTS AND OUTPUTS                        [DONE]
-      *    SPLIT UP DATA INTO CHUNKS OF INFORMATION             [DONE]
-      *LOOP THRU THE RECORDS IN THE FILE                        [DONE]
-      *DURING LOOP:                                             [DONE]
-      *    WRITE TO S&L RECORDS FILE IF TRANS-CODE = 'S' OR 'L' [DONE]
-      *    WRITE TO RETURNS FILE IF TRANS-CODE = 'R'            [DONE]
-      *AFTER LOOP:
-      *    ANALYZE DATA ['S' OR 'L']:
-      *         TRANS-CODE = 'S' OR 'L'
-      *             TOTAL NUMBER OF 'S' AND 'L' RECORDS         [DONE]
-      *             TOTAL AMOUNT OF 'S' AND 'L' RECORDS         [DONE]
-      *             TOTAL NUMBER OF 'S' RECORDS                 [DONE]
-      *             TOTAL AMOUNT OF 'S' RECORDS                 [DONE]
-      *             TOTAL NUMBER OF 'L' RECORDS                 [DONE]
-      *             TOTAL AMOUNT OF 'L' RECORDS                 [DONE]
-      *             TOTAL RECORD COUNT                          [DONE]
-      *             TOTAL AMOUNT FOR EACH STORE                 [DONE]
-      *          PERCENTAGE OF TRANSACTIONS PER PAYMENT TYPE    [DONE]
-      *          NUMBER OF TRANSACTIONS IN EACH TYPE OF PAYMENT [DONE]
-      *                 NOTE: ONLY FOR 'S' AND 'L', NOT 'R'
-      *
-      *   ANALYZE DATA ['R']:
-      *         TOTAL NUMBER OF 'R' RECORDS                     [DONE]
-      *         TOTAL AMOUNT OF 'R' RECORDS FOR EACH STORE      [DONE]
-      *         TOTAL NUMBER OF 'R' RECORDS                     [DONE]
-      *         TOTAL AMOUNT OF 'R' RECORDS                     [DONE]
-      *
-      *   ANALYZE DATA ['S' OR 'L' OR 'R']:
-      *         GRAND TOTAL = (('S' TOTAL + 'L' TOTAL) - 'R' TOTAL)
-      *         [WIP]
-
-
         INPUT-OUTPUT SECTION.
         FILE-CONTROL.
             SELECT INPUT-FILE
@@ -72,152 +34,167 @@
 
       * THIS SPLITS UP THE DATA INTO USABLE CHUNKS FROM THE RAW DATA.
        01 INPUT-LINE.
-          05 IL-TRANSACTION-CODE       PIC X(1).
-          05 IL-TRANSACTION-AMOUNT     PIC 9(5)V99.
-          05 IL-PAYMENT-TYPE           PIC X(2).
-          05 IL-STORE-NUMBER           PIC 9(2).
-          05 IL-INVOICE-NUMBER         PIC X(9).
+          05 IL-TRANSACTION-CODE        PIC X(1).
+          05 IL-TRANSACTION-AMOUNT      PIC 9(5)V99.
+          05 IL-PAYMENT-TYPE            PIC X(2).
+          05 IL-STORE-NUMBER            PIC 9(2).
+          05 IL-INVOICE-NUMBER          PIC X(9).
           05 SPLIT-INVOICE REDEFINES IL-INVOICE-NUMBER.
-             10 INVOICE-PREFIX-1       PIC X(1).
-             10 INVOICE-PREFIX-2       PIC X(1).
-             10 DASH                   PIC X(1).
-             10 INVOICE-NUMBER         PIC X(6).
-          05 IL-SKU                    PIC X(15).
+             10 INVOICE-PREFIX-1        PIC X(1).
+             10 INVOICE-PREFIX-2        PIC X(1).
+             10 DASH                    PIC X(1).
+             10 INVOICE-NUMBER          PIC X(6).
+          05 IL-SKU                     PIC X(15).
 
         FD OUTPUT-FILE
             RECORDING MODE IS F
             RECORD CONTAINS 108 CHARACTERS.
-       01 OUTPUT-LINE                  PIC X(108).
+       01 OUTPUT-LINE                   PIC X(108).
 
         FD SALE_LAY_OUTFILE
            RECORDING MODE IS F
            RECORD CONTAINS 108 CHARACTERS.
-       01 SALE_LAY_OUTLINE             PIC X(108).
+       01 SALE_LAY_OUTLINE              PIC X(108).
 
        FD RETURNED_OUTFILE
            RECORDING MODE IS F
            RECORD CONTAINS 108 CHARACTERS.
-       01 RETURNED_OUTLINE             PIC X(108).
+       01 RETURNED_OUTLINE              PIC X(108).
 
         WORKING-STORAGE SECTION.
 
-       01 END-OF-FILE                  PIC X(1).
-          88 EOF                                   VALUE 'Y'.
-          88 NOT-EOF                               VALUE 'N'.
+       01 END-OF-FILE                   PIC X(1).
+          88 EOF                                       VALUE 'Y'.
+          88 NOT-EOF                                   VALUE 'N'.
 
-       01 WS-TRANS-CODE-SALES-OPTIONS  PIC X(1).
-          88 TCSO-SALES                            VALUE 'S'.
-          88 TCSO-LAYAWAYS                         VALUE 'L'.
-          88 TCSO-RETURNED                         VALUE 'R'.
+       01 WS-TRANS-CODE-SALES-OPTIONS   PIC X(1).
+          88 TCSO-SALES                                VALUE 'S'.
+          88 TCSO-LAYAWAYS                             VALUE 'L'.
+          88 TCSO-RETURNED                             VALUE 'R'.
 
-       01 WS-PAYMENT-TYPE-OPTIONS      PIC X(2).
-          88 PTO-DEBIT                             VALUE 'DB'.
-          88 PTO-CREDIT                            VALUE 'CR'.
-          88 PTO-CASH                              VALUE 'CA'.
+       01 WS-PAYMENT-TYPE-OPTIONS       PIC X(2).
+          88 PTO-DEBIT                                 VALUE 'DB'.
+          88 PTO-CREDIT                                VALUE 'CR'.
+          88 PTO-CASH                                  VALUE 'CA'.
 
-       01 WS-STORE-CODES               PIC 9(2).
-          88 STORE-ONE                             VALUE  01.
-          88 STORE-TWO                             VALUE  02.
-          88 STORE-THREE                           VALUE  03.
-          88 STORE-FOUR                            VALUE  04.
-          88 STORE-FIVE                            VALUE  05.
-          88 STORE-TWELVE                          VALUE  12.
+       01 WS-STORE-CODES                PIC 9(2).
+          88 STORE-ONE                                 VALUE 01.
+          88 STORE-TWO                                 VALUE 02.
+          88 STORE-THREE                               VALUE 03.
+          88 STORE-FOUR                                VALUE 04.
+          88 STORE-FIVE                                VALUE 05.
+          88 STORE-TWELVE                              VALUE 12.
 
-       01 WS-SALES-COUNT               PIC 9(3).
-       01 WS-LAYAWAY-COUNT             PIC 9(3).
-       01 WS-RETURN-COUNT              PIC 9(3).
-       01 WS-SL-TOTAL-COUNT            PIC 9(3).
-       01 WS-TOTAL-ROW-COUNTER         PIC 9(3).
+       01 WS-SALES-COUNT                PIC 9(3).
+       01 WS-LAYAWAY-COUNT              PIC 9(3).
+       01 WS-RETURN-COUNT               PIC 9(3).
+       01 WS-SL-TOTAL-COUNT             PIC 9(3).
+       01 WS-TOTAL-ROW-COUNTER          PIC 9(3).
 
-       01 WS-TOTAL-DEBIT-COUNTER       PIC 9(3).
-       01 WS-TOTAL-CREDIT-COUNTER      PIC 9(3).
-       01 WS-TOTAL-CASH-COUNTER        PIC 9(3).
+       01 WS-TOTAL-DEBIT-COUNTER        PIC 9(3).
+       01 WS-TOTAL-CREDIT-COUNTER       PIC 9(3).
+       01 WS-TOTAL-CASH-COUNTER         PIC 9(3).
 
-       01 WS-TOTAL-S-AMOUNT            PIC 9(8)V99.
-       01 WS-TOTAL-L-AMOUNT            PIC 9(8)V99.
-       01 WS-TOTAL-R-AMOUNT            PIC 9(8)V99.
-       01 WS-TOTAL-SL-AMOUNT           PIC 9(8)V99.
+       01 WS-TOTAL-S-AMOUNT             PIC 9(8)V99.
+       01 WS-TOTAL-L-AMOUNT             PIC 9(8)V99.
+       01 WS-TOTAL-R-AMOUNT             PIC 9(8)V99.
+       01 WS-TOTAL-SL-AMOUNT            PIC 9(8)V99.
 
-       01 WS-TOTAL-S-AMOUNT-TALLY      PIC 9(8)V99.
-       01 WS-TOTAL-L-AMOUNT-TALLY      PIC 9(8)V99.
-       01 WS-TOTAL-R-AMOUNT-TALLY      PIC 9(8)V99.
-       01 WS-TOTAL-SL-AMOUNT-TALLY     PIC 9(8)V99.
+       01 WS-TOTAL-S-AMOUNT-TALLY       PIC 9(8)V99.
+       01 WS-TOTAL-L-AMOUNT-TALLY       PIC 9(8)V99.
+       01 WS-TOTAL-R-AMOUNT-TALLY       PIC 9(8)V99.
+       01 WS-TOTAL-SL-AMOUNT-TALLY      PIC 9(8)V99.
 
-       01 WS-TOTAL-TRANSACTIONS        PIC 9(5).
-       01 WS-TRANSACTION-CODE          PIC X(1).
-       01 WS-TOTAL-DB-CR               PIC 9(5).
-       01 WS-GRAND-TOTAL               PIC 9(8)V99.
+       01 WS-TOTAL-TRANSACTIONS         PIC 9(5).
+       01 WS-TRANSACTION-CODE           PIC X(1).
+       01 WS-TOTAL-DB-CR                PIC 9(5).
+       01 WS-SUBTOTAL                   PIC 9(8)V99.
+       01 WS-GRAND-TOTAL                PIC 9(8)V99.
 
 
-       01 WS-SALES-COUNT-STR           PIC Z(3).
-       01 WS-LAYAWAY-COUNT-STR         PIC Z(3).
-       01 WS-RETURN-COUNT-STR          PIC Z(3).
-       01 WS-SL-TOTAL-COUNT-STR        PIC Z(3).
-       01 WS-TOTAL-ROW-COUNTER-STR     PIC Z(3).
+       01 WS-SALES-COUNT-STR            PIC Z(3).
+       01 WS-LAYAWAY-COUNT-STR          PIC Z(3).
+       01 WS-RETURN-COUNT-STR           PIC Z(3).
+       01 WS-SL-TOTAL-COUNT-STR         PIC Z(3).
+       01 WS-TOTAL-ROW-COUNTER-STR      PIC Z(3).
 
-       01 WS-TOTAL-DEBIT-COUNTER-STR   PIC Z(3).
-       01 WS-TOTAL-CREDIT-COUNTER-STR  PIC Z(3).
-       01 WS-TOTAL-CASH-COUNTER-STR    PIC Z(3).
+       01 WS-TOTAL-DEBIT-COUNTER-STR    PIC Z(3).
+       01 WS-TOTAL-CREDIT-COUNTER-STR   PIC Z(3).
+       01 WS-TOTAL-CASH-COUNTER-STR     PIC Z(3).
 
-       01 WS-TOTAL-S-AMOUNT-STR      PIC Z(8)V99.
-       01 WS-TOTAL-L-AMOUNT-STR      PIC Z(8)V99.
-       01 WS-TOTAL-R-AMOUNT-STR      PIC Z(8)V99.
-       01 WS-TOTAL-SL-AMOUNT-STR     PIC Z(8)V99.
+       01 WS-TOTAL-S-AMOUNT-STR         PIC $ZZ,ZZ9.99.
+       01 WS-TOTAL-L-AMOUNT-STR         PIC $ZZ,ZZ9.99.
+       01 WS-TOTAL-R-AMOUNT-STR         PIC $ZZ,ZZ9.99.
+       01 WS-TOTAL-SL-AMOUNT-STR        PIC $ZZ,ZZ9.99.
 
-       01 WS-TOTAL-TRANSACTIONS-STR  PIC Z(3).
-       01 WS-GRAND-TOTAL-STR         PIC Z(8)V99.
+       01 WS-TOTAL-TRANSACTIONS-STR     PIC Z(3).
+       01 WS-GRAND-TOTAL-STR            PIC $ZZ,ZZ9.99.
 
-       01 WS-STORE-NUMBER            PIC 9(2).
+       01 WS-STORE-NUMBER               PIC 9(2).
 
-       01 WS-STORE-ONE-COUNT         PIC 9(6)V99.
-       01 WS-STORE-TWO-COUNT         PIC 9(6)V99.
-       01 WS-STORE-THREE-COUNT       PIC 9(6)V99.
-       01 WS-STORE-FOUR-COUNT        PIC 9(6)V99.
-       01 WS-STORE-FIVE-COUNT        PIC 9(6)V99.
-       01 WS-STORE-TWELVE-COUNT      PIC 9(6)V99.
+       01 WS-STORE-ONE-COUNT            PIC 9(6)V99.
+       01 WS-STORE-TWO-COUNT            PIC 9(6)V99.
+       01 WS-STORE-THREE-COUNT          PIC 9(6)V99.
+       01 WS-STORE-FOUR-COUNT           PIC 9(6)V99.
+       01 WS-STORE-FIVE-COUNT           PIC 9(6)V99.
+       01 WS-STORE-TWELVE-COUNT         PIC 9(6)V99.
 
-       01 WS-STORE-ONE-R-COUNT       PIC 9(6)V99.
-       01 WS-STORE-TWO-R-COUNT       PIC 9(6)V99.
-       01 WS-STORE-THREE-R-COUNT     PIC 9(6)V99.
-       01 WS-STORE-FOUR-R-COUNT      PIC 9(6)V99.
-       01 WS-STORE-FIVE-R-COUNT      PIC 9(6)V99.
-       01 WS-STORE-TWELVE-R-COUNT    PIC 9(6)V99.
+       01 WS-STORE-ONE-REC-COUNT        PIC 9(2).
+       01 WS-STORE-TWO-REC-COUNT        PIC 9(2).
+       01 WS-STORE-THREE-REC-COUNT      PIC 9(2).
+       01 WS-STORE-FOUR-REC-COUNT       PIC 9(2).
+       01 WS-STORE-FIVE-REC-COUNT       PIC 9(2).
+       01 WS-STORE-TWELVE-REC-COUNT     PIC 9(2).
 
-       01 WS-STORE-ONE-TALLY         PIC Z(6)V99.
-       01 WS-STORE-TWO-TALLY         PIC Z(6)V99.
-       01 WS-STORE-THREE-TALLY       PIC Z(6)V99.
-       01 WS-STORE-FOUR-TALLY        PIC Z(6)V99.
-       01 WS-STORE-FIVE-TALLY        PIC Z(6)V99.
-       01 WS-STORE-TWELVE-TALLY      PIC Z(6)V99.
+       01 WS-STORE-ONE-REC-COUNT-STR    PIC Z(2).
+       01 WS-STORE-TWO-REC-COUNT-STR    PIC Z(2).
+       01 WS-STORE-THREE-REC-COUNT-STR  PIC Z(2).
+       01 WS-STORE-FOUR-REC-COUNT-STR   PIC Z(2).
+       01 WS-STORE-FIVE-REC-COUNT-STR   PIC Z(2).
+       01 WS-STORE-TWELVE-REC-COUNT-STR PIC Z(2).
 
-       01 WS-STORE-ONE-R-TALLY      PIC Z(6)V99.
-       01 WS-STORE-TWO-R-TALLY      PIC Z(6)V99.
-       01 WS-STORE-THREE-R-TALLY      PIC Z(6)V99.
-       01 WS-STORE-FOUR-R-TALLY      PIC Z(6)V99.
-       01 WS-STORE-FIVE-R-TALLY      PIC Z(6)V99.
-       01 WS-STORE-TWELVE-R-TALLY      PIC Z(6)V99.
+       01 WS-STORE-ONE-R-COUNT          PIC 9(3)V99.
+       01 WS-STORE-TWO-R-COUNT          PIC 9(3)V99.
+       01 WS-STORE-THREE-R-COUNT        PIC 9(3)V99.
+       01 WS-STORE-FOUR-R-COUNT         PIC 9(3)V99.
+       01 WS-STORE-FIVE-R-COUNT         PIC 9(3)V99.
+       01 WS-STORE-TWELVE-R-COUNT       PIC 9(3)V99.
 
-       01 WS-CREDIT-DECIMAL          PIC 9(3)V9(3).
-       01 WS-DEBIT-DECIMAL           PIC 9(3)V9(3).
-       01 WS-CASH-DECIMAL            PIC 9(3)V9(3).
+       01 WS-STORE-ONE-TALLY            PIC $ZZ,ZZ9.99.
+       01 WS-STORE-TWO-TALLY            PIC $ZZ,ZZ9.99.
+       01 WS-STORE-THREE-TALLY          PIC $ZZ,ZZ9.99.
+       01 WS-STORE-FOUR-TALLY           PIC $ZZ,ZZ9.99.
+       01 WS-STORE-FIVE-TALLY           PIC $ZZ,ZZ9.99.
+       01 WS-STORE-TWELVE-TALLY         PIC $ZZ,ZZ9.99.
 
-       01 WS-CREDIT-PERCENT          PIC 9(3)V9(3).
-       01 WS-DEBIT-PERCENT           PIC 9(3)V9(3).
-       01 WS-CASH-PERCENT            PIC 9(3)V9(3).
+       01 WS-STORE-ONE-R-TALLY          PIC $ZZ9.99.
+       01 WS-STORE-TWO-R-TALLY          PIC $ZZ9.99.
+       01 WS-STORE-THREE-R-TALLY        PIC $ZZ9.99.
+       01 WS-STORE-FOUR-R-TALLY         PIC $ZZ9.99.
+       01 WS-STORE-FIVE-R-TALLY         PIC $ZZ9.99.
+       01 WS-STORE-TWELVE-R-TALLY       PIC $ZZ9.99.
 
-       01 WS-HUNDRED                 PIC 9V9 VALUE 1.
+       01 WS-CREDIT-DECIMAL             PIC 9(3)V9(3).
+       01 WS-DEBIT-DECIMAL              PIC 9(3)V9(3).
+       01 WS-CASH-DECIMAL               PIC 9(3)V9(3).
 
-       01 WS-CREDIT-PERCENT-STR    PIC Z(10)V99.
-       01 WS-DEBIT-PERCENT-STR     PIC Z(10)V99.
-       01 WS-CASH-PERCENT-STR      PIC Z(10)V99.
+       01 WS-CREDIT-PERCENT             PIC 9(2)V9(3).
+       01 WS-DEBIT-PERCENT              PIC 9(2)V9(3).
+       01 WS-CASH-PERCENT               PIC 9(2)V9(3).
+
+       01 WS-HUNDRED                    PIC 9V9        VALUE 1.
+
+       01 WS-CREDIT-PERCENT-STR         PIC Z9.99.
+       01 WS-DEBIT-PERCENT-STR          PIC Z9.99.
+       01 WS-CASH-PERCENT-STR           PIC Z9.99.
 
         PROCEDURE DIVISION.
        000-MAIN.
            PERFORM 100-OPEN-FILES.
            PERFORM UNTIL EOF
-                   PERFORM 150-READ-FILES
-                   PERFORM 200-PROCESS-RECORDS
-                   ADD 1 TO WS-TOTAL-ROW-COUNTER
+               PERFORM 150-READ-FILES
+               PERFORM 200-PROCESS-RECORDS
+               ADD 1 TO WS-TOTAL-ROW-COUNTER
            END-PERFORM.
            PERFORM 890-SALES-SUMMARY.
            PERFORM 900-CLOSE-FILES.
@@ -260,118 +237,131 @@
            END-IF.
 
            ADD WS-TOTAL-S-AMOUNT TO WS-TOTAL-L-AMOUNT GIVING
-           WS-TOTAL-SL-AMOUNT.
+              WS-TOTAL-SL-AMOUNT.
 
        220-SPLIT-BY-PAYMENT.
-           IF PTO-DEBIT THEN
-              ADD 1 TO WS-TOTAL-DEBIT-COUNTER
-           END-IF.
-           IF PTO-CREDIT THEN
-              ADD 1 TO WS-TOTAL-CREDIT-COUNTER
-           END-IF.
-           IF PTO-CASH THEN
-              ADD 1 TO WS-TOTAL-CASH-COUNTER
-           END-IF.
+           IF PTO-DEBIT  THEN ADD 1 TO WS-TOTAL-DEBIT-COUNTER  END-IF.
+           IF PTO-CREDIT THEN ADD 1 TO WS-TOTAL-CREDIT-COUNTER END-IF.
+           IF PTO-CASH   THEN ADD 1 TO WS-TOTAL-CASH-COUNTER   END-IF.
 
            ADD WS-TOTAL-DEBIT-COUNTER TO WS-TOTAL-CREDIT-COUNTER
-           GIVING WS-TOTAL-DB-CR.
+              GIVING WS-TOTAL-DB-CR.
 
            ADD WS-TOTAL-DB-CR TO WS-TOTAL-CASH-COUNTER GIVING
-           WS-TOTAL-TRANSACTIONS.
+              WS-TOTAL-TRANSACTIONS.
 
        230-SPLIT-BY-AMOUNT.
            EVALUATE TRUE
-               WHEN TCSO-SALES
-                    ADD IL-TRANSACTION-AMOUNT TO WS-TOTAL-S-AMOUNT
-                    MOVE WS-TOTAL-S-AMOUNT TO WS-TOTAL-S-AMOUNT-TALLY
-               WHEN TCSO-LAYAWAYS
-                    ADD IL-TRANSACTION-AMOUNT TO WS-TOTAL-L-AMOUNT
-                    MOVE WS-TOTAL-L-AMOUNT TO WS-TOTAL-L-AMOUNT-TALLY
-               WHEN TCSO-RETURNED
-                    ADD IL-TRANSACTION-AMOUNT TO WS-TOTAL-R-AMOUNT
-                    MOVE WS-TOTAL-R-AMOUNT TO WS-TOTAL-R-AMOUNT-TALLY
+
+           WHEN TCSO-SALES
+                ADD IL-TRANSACTION-AMOUNT TO WS-TOTAL-S-AMOUNT
+                MOVE WS-TOTAL-S-AMOUNT TO WS-TOTAL-S-AMOUNT-TALLY
+
+           WHEN TCSO-LAYAWAYS
+                ADD IL-TRANSACTION-AMOUNT TO WS-TOTAL-L-AMOUNT
+                MOVE WS-TOTAL-L-AMOUNT TO WS-TOTAL-L-AMOUNT-TALLY
+
+           WHEN TCSO-RETURNED
+                ADD IL-TRANSACTION-AMOUNT TO WS-TOTAL-R-AMOUNT
+                MOVE WS-TOTAL-R-AMOUNT TO WS-TOTAL-R-AMOUNT-TALLY
+
            END-EVALUATE.
 
        240-SPLIT-AMOUNT-PER-STORE.
       *NOTE: THE STORE CODES ARE 01,02,03,04,05,12
-                MOVE IL-TRANSACTION-CODE TO WS-TRANSACTION-CODE.
+           MOVE IL-TRANSACTION-CODE TO WS-TRANSACTION-CODE.
 
-                MOVE SPACES TO OUTPUT-LINE.
-                IF IL-STORE-NUMBER = 01
-                    IF TCSO-SALES OR TCSO-LAYAWAYS
-                        ADD IL-TRANSACTION-AMOUNT
-                         TO WS-STORE-ONE-COUNT
-                    END-IF
+           MOVE SPACES TO OUTPUT-LINE.
+           IF IL-STORE-NUMBER = 01
 
-                    IF TCSO-RETURNED
-                        ADD IL-TRANSACTION-AMOUNT
-                         TO WS-STORE-ONE-R-COUNT
-                    END-IF
-                END-IF.
+              ADD 1 TO WS-STORE-ONE-REC-COUNT
+              IF TCSO-SALES OR TCSO-LAYAWAYS
+                 ADD IL-TRANSACTION-AMOUNT TO WS-STORE-ONE-COUNT
+              END-IF
 
-                MOVE SPACES TO OUTPUT-LINE.
-                IF IL-STORE-NUMBER = 02
-                    IF TCSO-SALES OR TCSO-LAYAWAYS
-                        ADD IL-TRANSACTION-AMOUNT
-                         TO WS-STORE-TWO-COUNT
-                    END-IF
+              IF TCSO-RETURNED
+                 ADD IL-TRANSACTION-AMOUNT TO WS-STORE-ONE-R-COUNT
+              END-IF
 
-                    IF TCSO-RETURNED
-                        ADD IL-TRANSACTION-AMOUNT
-                         TO WS-STORE-TWO-R-COUNT
-                    END-IF
-                END-IF.
+           END-IF.
 
-                MOVE SPACES TO OUTPUT-LINE.
-                IF IL-STORE-NUMBER = 03
-                    IF TCSO-SALES OR TCSO-LAYAWAYS
-                        ADD IL-TRANSACTION-AMOUNT
-                         TO WS-STORE-THREE-COUNT
-                    END-IF
+           MOVE SPACES TO OUTPUT-LINE.
 
-                    IF TCSO-RETURNED
-                        ADD IL-TRANSACTION-AMOUNT
-                         TO WS-STORE-THREE-R-COUNT
-                    END-IF
-                END-IF.
+           IF IL-STORE-NUMBER = 02
 
-                MOVE SPACES TO OUTPUT-LINE.
-                IF IL-STORE-NUMBER = 04
-                    IF TCSO-SALES OR TCSO-LAYAWAYS
-                        ADD IL-TRANSACTION-AMOUNT
-                         TO WS-STORE-FOUR-COUNT
-                    END-IF
+              ADD 1 TO WS-STORE-TWO-REC-COUNT
+              IF TCSO-SALES OR TCSO-LAYAWAYS
+                 ADD IL-TRANSACTION-AMOUNT TO WS-STORE-TWO-COUNT
+              END-IF
 
-                    IF TCSO-RETURNED
-                        ADD IL-TRANSACTION-AMOUNT
-                         TO WS-STORE-FOUR-R-COUNT
-                    END-IF
-                END-IF.
+              IF TCSO-RETURNED
+                 ADD IL-TRANSACTION-AMOUNT TO WS-STORE-TWO-R-COUNT
+              END-IF
 
-                IF IL-STORE-NUMBER = 05
-                    IF TCSO-SALES OR TCSO-LAYAWAYS
-                        ADD IL-TRANSACTION-AMOUNT
-                         TO WS-STORE-FIVE-COUNT
-                    END-IF
+           END-IF.
 
-                    IF TCSO-RETURNED
-                        ADD IL-TRANSACTION-AMOUNT
-                         TO WS-STORE-FIVE-R-COUNT
-                    END-IF
-                END-IF.
+           MOVE SPACES TO OUTPUT-LINE.
+           IF IL-STORE-NUMBER = 03
 
-                MOVE SPACES TO OUTPUT-LINE.
-                IF IL-STORE-NUMBER = 12
-                    IF TCSO-SALES OR TCSO-LAYAWAYS
-                        ADD IL-TRANSACTION-AMOUNT
-                         TO WS-STORE-TWELVE-COUNT
-                    END-IF
+              ADD 1 TO WS-STORE-THREE-REC-COUNT
+              IF TCSO-SALES OR TCSO-LAYAWAYS
+                 ADD IL-TRANSACTION-AMOUNT TO WS-STORE-THREE-COUNT
+              END-IF
 
-                    IF TCSO-RETURNED
-                        ADD IL-TRANSACTION-AMOUNT
-                         TO WS-STORE-TWELVE-R-COUNT
-                    END-IF
-                END-IF.
+              IF TCSO-RETURNED
+                 ADD IL-TRANSACTION-AMOUNT TO WS-STORE-THREE-R-COUNT
+              END-IF
+
+           END-IF.
+
+           MOVE SPACES TO OUTPUT-LINE.
+           IF IL-STORE-NUMBER = 04
+
+              ADD 1 TO WS-STORE-FOUR-REC-COUNT
+              IF TCSO-SALES OR TCSO-LAYAWAYS
+                 ADD IL-TRANSACTION-AMOUNT TO WS-STORE-FOUR-COUNT
+              END-IF
+
+              IF TCSO-RETURNED
+                 ADD IL-TRANSACTION-AMOUNT
+                    TO WS-STORE-FOUR-R-COUNT
+              END-IF
+
+           END-IF.
+
+           IF IL-STORE-NUMBER = 05
+
+              ADD 1 TO WS-STORE-FIVE-REC-COUNT
+              IF TCSO-SALES OR TCSO-LAYAWAYS
+                 ADD IL-TRANSACTION-AMOUNT TO WS-STORE-FIVE-COUNT
+              END-IF
+
+              IF TCSO-RETURNED
+                 ADD IL-TRANSACTION-AMOUNT
+                    TO WS-STORE-FIVE-R-COUNT
+              END-IF
+
+           END-IF.
+
+           MOVE SPACES TO OUTPUT-LINE.
+           IF IL-STORE-NUMBER = 12
+
+              ADD 1 TO WS-STORE-TWELVE-REC-COUNT
+              IF TCSO-SALES OR TCSO-LAYAWAYS
+                 ADD IL-TRANSACTION-AMOUNT TO WS-STORE-TWELVE-COUNT
+              END-IF
+
+              IF TCSO-RETURNED
+                 ADD IL-TRANSACTION-AMOUNT TO WS-STORE-TWELVE-R-COUNT
+              END-IF
+
+           END-IF.
+
+           ADD WS-TOTAL-S-AMOUNT-TALLY TO WS-TOTAL-L-AMOUNT-TALLY
+              GIVING WS-SUBTOTAL.
+
+           SUBTRACT WS-SUBTOTAL FROM WS-TOTAL-R-AMOUNT-TALLY
+              GIVING WS-GRAND-TOTAL.
 
        300-SPLIT-SALES.
            MOVE INPUT-LINE TO SALE_LAY_OUTLINE.
@@ -393,27 +383,20 @@
 
       *    COUNTS
            MOVE SPACES TO OUTPUT-LINE.
-           STRING "SALES COUNT: ", WS-SALES-COUNT-STR DELIMITED BY SIZE
-              INTO OUTPUT-LINE.
-           WRITE OUTPUT-LINE.
+           STRING "             SALES COUNT: ", WS-SALES-COUNT-STR
+           DELIMITED BY SIZE INTO OUTPUT-LINE. WRITE OUTPUT-LINE.
 
            MOVE SPACES TO OUTPUT-LINE.
-           STRING "LAYAWAY COUNT: ", WS-LAYAWAY-COUNT-STR
-              DELIMITED BY SIZE
-              INTO OUTPUT-LINE.
-           WRITE OUTPUT-LINE.
+           STRING "           LAYAWAY COUNT: ", WS-LAYAWAY-COUNT-STR
+           DELIMITED BY SIZE INTO OUTPUT-LINE. WRITE OUTPUT-LINE.
 
            MOVE SPACES TO OUTPUT-LINE.
-           STRING "RETURN COUNT: ", WS-RETURN-COUNT-STR
-              DELIMITED BY SIZE
-              INTO OUTPUT-LINE.
-           WRITE OUTPUT-LINE.
+           STRING "            RETURN COUNT: ", WS-RETURN-COUNT-STR
+           DELIMITED BY SIZE INTO OUTPUT-LINE. WRITE OUTPUT-LINE.
 
            MOVE SPACES TO OUTPUT-LINE.
-           STRING "TOTAL ROWS: ",  WS-TOTAL-ROW-COUNTER
-           DELIMITED BY SIZE
-           INTO OUTPUT-LINE.
-           WRITE OUTPUT-LINE.
+           STRING "              TOTAL ROWS: ", WS-TOTAL-ROW-COUNTER
+           DELIMITED BY SIZE INTO OUTPUT-LINE. WRITE OUTPUT-LINE.
 
            MOVE SPACES TO OUTPUT-LINE.
            WRITE OUTPUT-LINE.
@@ -428,184 +411,218 @@
 
       *    OUTPUT AMOUNT
            MOVE SPACES TO OUTPUT-LINE.
-           STRING "SALES AMOUNT: ", WS-TOTAL-S-AMOUNT-STR
-              DELIMITED BY SIZE
-              INTO OUTPUT-LINE.
-           WRITE OUTPUT-LINE.
+           STRING "            SALES AMOUNT: ", WS-TOTAL-S-AMOUNT-STR
+           DELIMITED BY SIZE INTO OUTPUT-LINE. WRITE OUTPUT-LINE.
 
            MOVE SPACES TO OUTPUT-LINE.
-           STRING "LAYAWAY AMOUNT: ", WS-TOTAL-L-AMOUNT-STR
-              DELIMITED BY SIZE
-              INTO OUTPUT-LINE.
-           WRITE OUTPUT-LINE.
+           STRING "          LAYAWAY AMOUNT: ", WS-TOTAL-L-AMOUNT-STR
+           DELIMITED BY SIZE INTO OUTPUT-LINE. WRITE OUTPUT-LINE.
 
            MOVE SPACES TO OUTPUT-LINE.
-           STRING "RETURN AMOUNT: ", WS-TOTAL-R-AMOUNT-STR
-              DELIMITED BY SIZE
-              INTO OUTPUT-LINE.
-           WRITE OUTPUT-LINE.
+           STRING "           RETURN AMOUNT: ", WS-TOTAL-R-AMOUNT-STR
+           DELIMITED BY SIZE INTO OUTPUT-LINE. WRITE OUTPUT-LINE.
 
            MOVE SPACES TO OUTPUT-LINE.
            MOVE WS-TOTAL-SL-AMOUNT TO WS-TOTAL-SL-AMOUNT-STR.
-           STRING "TOTAL SALES AND LAYAWAYS AMOUNT: ",
-                  WS-TOTAL-SL-AMOUNT-STR DELIMITED BY SIZE
-              INTO OUTPUT-LINE.
+           STRING "        TOTAL S&L AMOUNT: ",
+           WS-TOTAL-SL-AMOUNT-STR DELIMITED BY SIZE INTO OUTPUT-LINE.
            WRITE OUTPUT-LINE.
 
            MOVE SPACES TO OUTPUT-LINE.
            WRITE OUTPUT-LINE.
 
            MOVE SPACES TO OUTPUT-LINE.
-           STRING "DEBIT TRANSACTIONS: ", WS-TOTAL-DEBIT-COUNTER-STR
-              DELIMITED BY SIZE
-              INTO OUTPUT-LINE.
-           WRITE OUTPUT-LINE.
+           STRING "      DEBIT TRANSACTIONS: ",
+           WS-TOTAL-DEBIT-COUNTER-STR DELIMITED BY SIZE INTO
+           OUTPUT-LINE. WRITE OUTPUT-LINE.
 
            MOVE SPACES TO OUTPUT-LINE.
-           STRING "CREDIT TRANSACTIONS: ", WS-TOTAL-CREDIT-COUNTER-STR
-              DELIMITED BY SIZE
-              INTO OUTPUT-LINE.
-           WRITE OUTPUT-LINE.
+           STRING "     CREDIT TRANSACTIONS: ",
+           WS-TOTAL-CREDIT-COUNTER-STR DELIMITED BY SIZE INTO
+           OUTPUT-LINE. WRITE OUTPUT-LINE.
 
            MOVE SPACES TO OUTPUT-LINE.
-           STRING "CASH TRANSACTIONS: ", WS-TOTAL-CASH-COUNTER-STR
-              DELIMITED BY SIZE
-              INTO OUTPUT-LINE.
+           STRING "       CASH TRANSACTIONS: ",
+           WS-TOTAL-CASH-COUNTER-STR DELIMITED BY SIZE INTO OUTPUT-LINE.
            WRITE OUTPUT-LINE.
 
            MOVE SPACES TO OUTPUT-LINE.
            MOVE WS-TOTAL-TRANSACTIONS TO WS-TOTAL-TRANSACTIONS-STR.
-           STRING "TOTAL TRANSACTIONS PROCESSED: ",
-                  WS-TOTAL-TRANSACTIONS-STR DELIMITED BY SIZE
-              INTO OUTPUT-LINE.
+           STRING "  TRANSACTIONS PROCESSED: ",
+           WS-TOTAL-TRANSACTIONS-STR DELIMITED BY SIZE INTO OUTPUT-LINE.
            WRITE OUTPUT-LINE.
 
-           COMPUTE WS-CREDIT-DECIMAL = WS-TOTAL-CREDIT-COUNTER * 100
-           COMPUTE WS-DEBIT-DECIMAL = WS-TOTAL-DEBIT-COUNTER * 100
-           COMPUTE WS-CASH-DECIMAL = WS-TOTAL-CASH-COUNTER * 100
+           COMPUTE WS-CREDIT-PERCENT =
+              (
+              WS-TOTAL-CREDIT-COUNTER * 1.00 / WS-TOTAL-TRANSACTIONS
+              ) * 100.
 
-           MULTIPLY WS-CREDIT-DECIMAL BY 100 GIVING WS-CREDIT-PERCENT.
-           MULTIPLY WS-DEBIT-DECIMAL BY 100 GIVING WS-DEBIT-PERCENT.
-           MULTIPLY WS-CASH-DECIMAL BY 100 GIVING WS-CASH-PERCENT.
+           COMPUTE WS-DEBIT-PERCENT =
+              (
+              WS-TOTAL-DEBIT-COUNTER * 1.00 / WS-TOTAL-TRANSACTIONS
+              ) * 100.
+
+           COMPUTE WS-CASH-PERCENT =
+              (
+              WS-TOTAL-CASH-COUNTER * 1.00 / WS-TOTAL-TRANSACTIONS
+              ) * 100.
 
            MOVE SPACES TO OUTPUT-LINE.
            WRITE OUTPUT-LINE.
 
            MOVE SPACES TO OUTPUT-LINE.
-           WRITE OUTPUT-LINE.
-
            MOVE WS-CREDIT-PERCENT TO WS-CREDIT-PERCENT-STR.
            MOVE WS-DEBIT-PERCENT TO WS-DEBIT-PERCENT-STR.
            MOVE WS-CASH-PERCENT TO WS-CASH-PERCENT-STR.
 
-           STRING "CREDIT PURCHASE PERCENT: " WS-CREDIT-PERCENT-STR
+           STRING " CREDIT PURCHASE PERCENT: " WS-CREDIT-PERCENT-STR
            DELIMITED BY SIZE INTO OUTPUT-LINE. WRITE OUTPUT-LINE.
 
-           STRING "DEBIT PURCHASE PERCENT: " WS-DEBIT-PERCENT-STR
+           STRING "  DEBIT PURCHASE PERCENT: " WS-DEBIT-PERCENT-STR
            DELIMITED BY SIZE INTO OUTPUT-LINE. WRITE OUTPUT-LINE.
 
-           STRING "CASH PURCHASE PERCENT: " WS-CASH-PERCENT-STR
+           STRING "   CASH PURCHASE PERCENT: " WS-CASH-PERCENT-STR
            DELIMITED BY SIZE INTO OUTPUT-LINE. WRITE OUTPUT-LINE.
-
-
 
       *    STORE NUMBER AMOUNTS
-           MOVE SPACES TO OUTPUT-LINE.
-           MOVE WS-STORE-ONE-COUNT TO WS-STORE-ONE-TALLY
-           MOVE WS-STORE-TWO-COUNT TO WS-STORE-TWO-TALLY
-           MOVE WS-STORE-THREE-COUNT TO WS-STORE-THREE-TALLY
-           MOVE WS-STORE-FOUR-COUNT TO WS-STORE-FOUR-TALLY
-           MOVE WS-STORE-FIVE-COUNT TO WS-STORE-FIVE-TALLY
-           MOVE WS-STORE-TWELVE-COUNT TO WS-STORE-TWELVE-TALLY
+           MOVE SPACES                  TO OUTPUT-LINE.
+           MOVE WS-STORE-ONE-COUNT      TO WS-STORE-ONE-TALLY
+           MOVE WS-STORE-TWO-COUNT      TO WS-STORE-TWO-TALLY
+           MOVE WS-STORE-THREE-COUNT    TO WS-STORE-THREE-TALLY
+           MOVE WS-STORE-FOUR-COUNT     TO WS-STORE-FOUR-TALLY
+           MOVE WS-STORE-FIVE-COUNT     TO WS-STORE-FIVE-TALLY
+           MOVE WS-STORE-TWELVE-COUNT   TO WS-STORE-TWELVE-TALLY
 
-           MOVE WS-STORE-ONE-R-COUNT TO WS-STORE-ONE-R-TALLY.
-           MOVE WS-STORE-TWO-R-COUNT TO WS-STORE-TWO-R-TALLY.
-           MOVE WS-STORE-THREE-R-COUNT TO WS-STORE-THREE-R-TALLY.
-           MOVE WS-STORE-FOUR-R-COUNT TO WS-STORE-FOUR-R-TALLY.
-           MOVE WS-STORE-FIVE-R-COUNT TO WS-STORE-FIVE-R-TALLY.
+           MOVE WS-STORE-ONE-R-COUNT    TO WS-STORE-ONE-R-TALLY.
+           MOVE WS-STORE-TWO-R-COUNT    TO WS-STORE-TWO-R-TALLY.
+           MOVE WS-STORE-THREE-R-COUNT  TO WS-STORE-THREE-R-TALLY.
+           MOVE WS-STORE-FOUR-R-COUNT   TO WS-STORE-FOUR-R-TALLY.
+           MOVE WS-STORE-FIVE-R-COUNT   TO WS-STORE-FIVE-R-TALLY.
            MOVE WS-STORE-TWELVE-R-COUNT TO WS-STORE-TWELVE-R-TALLY.
 
-           MOVE SPACES TO OUTPUT-LINE.
-           WRITE OUTPUT-LINE.
+           MOVE WS-STORE-ONE-REC-COUNT  TO WS-STORE-ONE-REC-COUNT-STR.
+           MOVE WS-STORE-TWO-REC-COUNT  TO WS-STORE-TWO-REC-COUNT-STR.
 
-           MOVE "STORE NUMBER AMOUNTS" TO OUTPUT-LINE.
-           WRITE OUTPUT-LINE.
+           MOVE WS-STORE-THREE-REC-COUNT TO
+           WS-STORE-THREE-REC-COUNT-STR.
 
-           MOVE SPACES TO OUTPUT-LINE.
-           STRING "STORE 1 SL: ", WS-STORE-ONE-TALLY DELIMITED BY SIZE
-           INTO OUTPUT-LINE.
-           WRITE OUTPUT-LINE.
+           MOVE WS-STORE-FOUR-REC-COUNT TO WS-STORE-FOUR-REC-COUNT-STR.
+           MOVE WS-STORE-FIVE-REC-COUNT TO WS-STORE-FIVE-REC-COUNT-STR.
 
-           MOVE SPACES TO OUTPUT-LINE.
-           STRING "STORE 1 R: ", WS-STORE-ONE-R-TALLY DELIMITED BY SIZE
-           INTO OUTPUT-LINE.
-           WRITE OUTPUT-LINE.
+           MOVE WS-STORE-TWELVE-REC-COUNT TO
+              WS-STORE-TWELVE-REC-COUNT-STR.
 
            MOVE SPACES TO OUTPUT-LINE.
            WRITE OUTPUT-LINE.
 
            MOVE SPACES TO OUTPUT-LINE.
-           STRING "STORE 2 SL: ", WS-STORE-TWO-TALLY DELIMITED BY SIZE
-           INTO OUTPUT-LINE.
+           STRING "               STORE 1 #: ",
+           WS-STORE-ONE-REC-COUNT-STR DELIMITED BY SIZE INTO
+           OUTPUT-LINE. WRITE OUTPUT-LINE.
+
+           MOVE SPACES TO OUTPUT-LINE.
+           STRING "              STORE 1 SL: ",
+           WS-STORE-ONE-TALLY DELIMITED BY SIZE INTO OUTPUT-LINE.
            WRITE OUTPUT-LINE.
 
            MOVE SPACES TO OUTPUT-LINE.
-           STRING "STORE 2 R: ", WS-STORE-TWO-R-TALLY DELIMITED BY SIZE
-           INTO OUTPUT-LINE.
+           STRING "               STORE 1 R: ",
+           WS-STORE-ONE-R-TALLY DELIMITED BY SIZE INTO OUTPUT-LINE.
            WRITE OUTPUT-LINE.
 
            MOVE SPACES TO OUTPUT-LINE.
            WRITE OUTPUT-LINE.
 
            MOVE SPACES TO OUTPUT-LINE.
-           STRING "STORE 3 SL: ", WS-STORE-THREE-TALLY DELIMITED BY SIZE
-           INTO OUTPUT-LINE.
+           STRING "               STORE 2 #: ",
+           WS-STORE-TWO-REC-COUNT-STR DELIMITED BY SIZE INTO
+           OUTPUT-LINE. WRITE OUTPUT-LINE.
+
+           MOVE SPACES TO OUTPUT-LINE.
+           STRING "              STORE 2 SL: ", WS-STORE-TWO-TALLY
+           DELIMITED BY SIZE INTO OUTPUT-LINE. WRITE OUTPUT-LINE.
+
+           MOVE SPACES TO OUTPUT-LINE.
+           STRING "               STORE 2 R: ",
+           WS-STORE-TWO-R-TALLY DELIMITED BY SIZE INTO OUTPUT-LINE.
            WRITE OUTPUT-LINE.
 
            MOVE SPACES TO OUTPUT-LINE.
-           STRING "STORE 3 R: ", WS-STORE-THREE-R-TALLY
+           WRITE OUTPUT-LINE.
+
+           MOVE SPACES TO OUTPUT-LINE.
+           STRING "               STORE 3 #: ",
+           WS-STORE-THREE-REC-COUNT-STR DELIMITED BY SIZE INTO
+           OUTPUT-LINE. WRITE OUTPUT-LINE.
+
+           MOVE SPACES TO OUTPUT-LINE.
+           STRING "              STORE 3 SL: ",
+           WS-STORE-THREE-TALLY DELIMITED BY SIZE INTO OUTPUT-LINE.
+           WRITE OUTPUT-LINE.
+
+           MOVE SPACES TO OUTPUT-LINE.
+           STRING "               STORE 3 R: ",
+           WS-STORE-THREE-R-TALLY DELIMITED BY SIZE INTO OUTPUT-LINE.
+           WRITE OUTPUT-LINE.
+
+           MOVE SPACES TO OUTPUT-LINE.
+           WRITE OUTPUT-LINE.
+
+           MOVE SPACES TO OUTPUT-LINE.
+           STRING "               STORE 4 #: ",
+           WS-STORE-FOUR-REC-COUNT-STR DELIMITED BY SIZE INTO
+           OUTPUT-LINE. WRITE OUTPUT-LINE.
+
+           MOVE SPACES TO OUTPUT-LINE.
+           STRING "              STORE 4 SL: ",
+           WS-STORE-FOUR-TALLY DELIMITED BY SIZE INTO OUTPUT-LINE.
+           WRITE OUTPUT-LINE.
+
+           MOVE SPACES TO OUTPUT-LINE.
+           STRING "               STORE 4 R: ", WS-STORE-FOUR-R-TALLY
            DELIMITED BY SIZE INTO OUTPUT-LINE. WRITE OUTPUT-LINE.
 
            MOVE SPACES TO OUTPUT-LINE.
            WRITE OUTPUT-LINE.
 
            MOVE SPACES TO OUTPUT-LINE.
-           STRING "STORE 4 SL: ", WS-STORE-FOUR-TALLY DELIMITED BY SIZE
-           INTO OUTPUT-LINE.
+           STRING "               STORE 5 #: ",
+           WS-STORE-FIVE-REC-COUNT-STR DELIMITED BY SIZE INTO
+           OUTPUT-LINE. WRITE OUTPUT-LINE.
+
+           MOVE SPACES TO OUTPUT-LINE.
+           STRING "              STORE 5 SL: ",
+           WS-STORE-FIVE-TALLY DELIMITED BY SIZE INTO OUTPUT-LINE.
            WRITE OUTPUT-LINE.
 
            MOVE SPACES TO OUTPUT-LINE.
-           STRING "STORE 4 R: ", WS-STORE-FOUR-R-TALLY DELIMITED BY SIZE
-           INTO OUTPUT-LINE.
-           WRITE OUTPUT-LINE.
-
-           MOVE SPACES TO OUTPUT-LINE.
-           WRITE OUTPUT-LINE.
-
-           MOVE SPACES TO OUTPUT-LINE.
-           STRING "STORE 5 SL: ", WS-STORE-FIVE-TALLY DELIMITED BY SIZE
-           INTO OUTPUT-LINE.
-           WRITE OUTPUT-LINE.
-
-           MOVE SPACES TO OUTPUT-LINE.
-           STRING "STORE 5 R: ", WS-STORE-FIVE-R-TALLY DELIMITED BY SIZE
-           INTO OUTPUT-LINE.
+           STRING "               STORE 5 R: ",
+           WS-STORE-FIVE-R-TALLY DELIMITED BY SIZE INTO OUTPUT-LINE.
            WRITE OUTPUT-LINE.
 
            MOVE SPACES TO OUTPUT-LINE.
            WRITE OUTPUT-LINE.
 
            MOVE SPACES TO OUTPUT-LINE.
-           STRING "STORE 12 SL: ", WS-STORE-TWELVE-TALLY
+           STRING "              STORE 12 #: ",
+           WS-STORE-TWELVE-REC-COUNT-STR DELIMITED BY SIZE INTO
+           OUTPUT-LINE. WRITE OUTPUT-LINE.
+
+           MOVE SPACES TO OUTPUT-LINE.
+           STRING "             STORE 12 SL: ", WS-STORE-TWELVE-TALLY
            DELIMITED BY SIZE INTO OUTPUT-LINE. WRITE OUTPUT-LINE.
 
            MOVE SPACES TO OUTPUT-LINE.
-           STRING "STORE 12 R: ", WS-STORE-TWELVE-R-TALLY
+           STRING "              STORE 12 R: ", WS-STORE-TWELVE-R-TALLY
            DELIMITED BY SIZE INTO OUTPUT-LINE. WRITE OUTPUT-LINE.
 
            MOVE SPACES TO OUTPUT-LINE.
            WRITE OUTPUT-LINE.
 
+           MOVE WS-GRAND-TOTAL TO WS-GRAND-TOTAL-STR.
+
+           STRING "             GRAND TOTAL: ", WS-GRAND-TOTAL-STR
+           DELIMITED BY SIZE INTO OUTPUT-LINE. WRITE OUTPUT-LINE.
 
        900-CLOSE-FILES.
            CLOSE INPUT-FILE.
