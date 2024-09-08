@@ -4,6 +4,10 @@
        AUTHOR. RAMIYAN GANGATHARAN.
       * DESCRIPTION: COBOL FILE FOR ASSIGNMENT 1 (MAINFRAME II)
 
+      * TODO: IN PARAGRAPH 450 CREATE AN IF STATEMENT REGARDING 'N'
+      * ROWS WHERE 'G' ROWS ARE STORED IN THE .OUT FILE AND THE 'N'
+      * ROWS ARE STORED IN A .DATA FILE FOR LATER USE IN PROGRAM 2.
+
        ENVIRONMENT DIVISION.
 
        CONFIGURATION SECTION.
@@ -46,17 +50,17 @@
        WORKING-STORAGE SECTION.
 
        01 WS-REPORT-HEADER.
-          05 FILLER                     PIC X(4)       VALUE SPACES.
-          05 WS-AUTHOR1                 PIC X(8)       VALUE "RAMIYAN ".
-          05 WS-AUTHOR2                 PIC X(1)       VALUE "G".
-          05 WS-COMMA                   PIC X(2)       VALUE ", ".
-          05 WS-ASSIGNMENT              PIC X(3)       VALUE "A1 ".
-          05 FILLER-REPORT1             PIC X(15)      VALUE SPACES.
-          05 WS-DUE-DATE                PIC X(10)      VALUE
-                                                           "09/06/2024".
-          05 FILLER-REPORT2             PIC X(44)      VALUE SPACES.
-          05 WS-STUDENT-NUMBER          PIC X(9)       VALUE "100835223"
-                                                                      .
+          05 WS-AUTHOR1         PIC X(8)      VALUE "RAMIYAN ".
+          05 WS-AUTHOR2         PIC X(11)     VALUE "GANGATHARAN".
+          05 WS-GAP-FILL        PIC X(20)     VALUE SPACES.
+          05 WS-ASSIGNMENT      PIC X(36)     VALUE
+           "MAINFRAMES II - ASSIGNMENT I".
+          05 WS-GAP-FILL        PIC X(5)      VALUE SPACES.
+          05 WS-DUE-DATE        PIC X(10)     VALUE "09/06/2024".
+          05 WS-GAP-FILL        PIC X(5)      VALUE SPACES.
+          05 WS-STUDENT-NUMBER  PIC X(9)      VALUE "100835223".
+
+
 
        01 WS-GAP.
           05 WS-FILLER                  PIC X(145)     VALUE " ".
@@ -73,13 +77,13 @@
           05 WS-EMP-NUMBER              PIC X(3)       VALUE "NUM".
           05 WS-GAP-FILL                PIC X(7)       VALUE SPACES.
           05 WS-EMP-NAME                PIC X(4)       VALUE "NAME".
-          05 WS-GAP-FILL                PIC X(7)       VALUE SPACES.
+          05 WS-GAP-FILL                PIC X(12)      VALUE SPACES.
           05 WS-YEARS                   PIC X(5)       VALUE "YEARS".
-          05 WS-GAP-FILL                PIC X(2)       VALUE SPACES.
+          05 WS-GAP-FILL                PIC X(3)       VALUE SPACES.
           05 WS-EDU-CODE                PIC X(4)       VALUE "CODE".
-          05 WS-GAP-FILL                PIC X(2)       VALUE SPACES.
+          05 WS-GAP-FILL                PIC X(3)       VALUE SPACES.
           05 WS-POSITION                PIC X(8)       VALUE "POSITION".
-          05 WS-GAP-FILL                PIC X(8)       VALUE SPACES.
+          05 WS-GAP-FILL                PIC X(5)       VALUE SPACES.
           05 WS-PRESENT-SALARY          PIC X(6)       VALUE "SALARY".
           05 WS-GAP-FILL                PIC X(2)       VALUE SPACES.
           05 WS-PERCENT-RAISE           PIC X(7)       VALUE "% RAISE".
@@ -92,12 +96,16 @@
           05 WS-GAP-FILL                PIC X(3)       VALUE SPACES.
           05 WS-BUDGET-ESTIMATE         PIC X(15)      VALUE
                 "BUDGET ESTIMATE".
+           05 WS-GAP-FILL               PIC x(3)       VALUE SPACES.
+           05 WS-BUDGET-DIFFERENCE      PIC X(18)       VALUE
+           "BUDGET DIFFERENCE".
+
        01 WS-DETAIL.
           05 WS-FILLER                  PIC X(4)       VALUE SPACES.
           05 WSD-EMPLOYEE-NUMBER        PIC 9(3).
-          05 WS-FILLER                  PIC X(2)       VALUE SPACES.
+          05 WS-FILLER                  PIC X(4)       VALUE SPACES.
           05 WSD-EMPLOYEE-NAME          PIC X(15).
-          05 WS-FILLER                  PIC X(2)       VALUE SPACES.
+          05 WS-FILLER                  PIC X(4)       VALUE SPACES.
           05 WSD-EDUCATION-CODE         PIC X(1).
           05 WS-FILLER                  PIC X(6)       VALUE SPACES.
           05 WSD-YEARS-SERVICE          PIC ZZ.
@@ -111,7 +119,10 @@
           05 WSD-PAY-INCREASE           PIC ZZZ,ZZ9.99.
           05 WS-FILLER                  PIC X(2)       VALUE SPACES.
           05 WSD-NEW-SALARY             PIC ZZZ,ZZ9.99.
-
+          05 WS-FILLER                  PIC X(2)       VALUE SPACES.
+          05 WSD-BUDGET-ESTIMATE        PIC ZZZ,ZZ9.99.
+          05 WS-FILLER                  PIC X(2)       VALUE SPACES.
+          05 WSD-BUDGET-DIFFERENCE      PIC ZZ.99.
 
        01 WS-MATH.
           05 MATH-YEARS-SERVICE         PIC 9(2).
@@ -123,11 +134,11 @@
           05 ANALYST                    PIC X(12)      VALUE
                 '   ANALYST  '.
           05 SENIOR-PROG                PIC X(12)      VALUE
-                'SENIOR PROGR'.
+                'SENIOR PROG '.
           05 PROGRAMMER                 PIC X(12)      VALUE
                 ' PROGRAMMER '.
           05 JUNIOR-PROG                PIC X(12)      VALUE
-                'JUNIOR PROGR'.
+                'JUNIOR PROG '.
           05 UNCLASSIFIED               PIC X(12)      VALUE
                 'UNCLASSIFIED'.
 
@@ -160,7 +171,6 @@
            PERFORM 125-GAP.
            PERFORM 400-PROCESS-INPUT-RECORDS.
            PERFORM 800-CLOSE-FILES.
-           PERFORM 900-CLEANUP.
            GOBACK.
 
        125-GAP.
@@ -207,96 +217,81 @@
            END-PERFORM.
 
        450-CALCULATIONS.
-      * ALGORITHM FOR POSITION NAMES
-           MOVE WSD-YEARS-SERVICE
-              TO MATH-YEARS-SERVICE.
+           MOVE WSD-YEARS-SERVICE TO MATH-YEARS-SERVICE.
+
            IF (IL-EDUCATION-CODE = "G")
               THEN
               IF (MATH-YEARS-SERVICE > 15)
                  THEN
-                 MOVE ANALYST
-                    TO WSD-POSITION
+                 MOVE ANALYST TO WSD-POSITION
               ELSE
                  IF (MATH-YEARS-SERVICE > 7)
                     THEN
-                    MOVE SENIOR-PROG
-                       TO WSD-POSITION
+                    MOVE SENIOR-PROG TO WSD-POSITION
                  ELSE
                     IF (MATH-YEARS-SERVICE > 2)
                        THEN
-                       MOVE PROGRAMMER
-                          TO WSD-POSITION
+                       MOVE PROGRAMMER TO WSD-POSITION
                     ELSE
-                       MOVE UNCLASSIFIED
-                          TO WSD-POSITION
+                       MOVE SPACES TO WSD-POSITION
                     END-IF
                  END-IF
               END-IF
            ELSE
               IF (MATH-YEARS-SERVICE > 10)
                  THEN
-                 MOVE PROGRAMMER
-                    TO WSD-POSITION
+                 MOVE PROGRAMMER TO WSD-POSITION
               ELSE
                  IF (MATH-YEARS-SERVICE > 4)
                     THEN
-                    MOVE JUNIOR-PROG
-                       TO WSD-POSITION
+                    MOVE JUNIOR-PROG TO WSD-POSITION
                  ELSE
-                    MOVE UNCLASSIFIED
-                       TO WSD-POSITION
+                    MOVE SPACES TO WSD-POSITION
                  END-IF
               END-IF
-           END-IF
+           END-IF.
 
-           MOVE WSD-PRESENT-SALARY
-              TO MATH-PRESENT-SALARY
+           MOVE WSD-PRESENT-SALARY TO MATH-PRESENT-SALARY.
 
            EVALUATE WSD-POSITION
+               WHEN ANALYST
+                    MOVE PERCENT-ANALYST
+                       TO WSD-INCREASE-PERCENT
 
-           WHEN ANALYST
-                MULTIPLY PERCENT-ANALYST
-                   BY 100
-                   GIVING WSD-INCREASE-PERCENT
+                    MULTIPLY MATH-PRESENT-SALARY
+                       BY PERCENT-ANALYST
+                       GIVING MATH-PAY-INCREASE
 
-                MULTIPLY MATH-PRESENT-SALARY
-                   BY PERCENT-ANALYST
-                   GIVING MATH-PAY-INCREASE
+               WHEN SENIOR-PROG
+                    MOVE PERCENT-SENIOR-PROG
+                       TO WSD-INCREASE-PERCENT
 
-           WHEN SENIOR-PROG
-                MULTIPLY PERCENT-SENIOR-PROG
-                   BY 100
-                   GIVING WSD-INCREASE-PERCENT
+                    MULTIPLY MATH-PRESENT-SALARY
+                       BY PERCENT-SENIOR-PROG
+                       GIVING MATH-PAY-INCREASE
 
-                MULTIPLY MATH-PRESENT-SALARY
-                   BY PERCENT-SENIOR-PROG
-                   GIVING MATH-PAY-INCREASE
+               WHEN PROGRAMMER
+                    MOVE PERCENT-PROGRAMMER
+                       TO WSD-INCREASE-PERCENT
 
-           WHEN PROGRAMMER
-                MULTIPLY PERCENT-PROGRAMMER
-                   BY 100
-                   GIVING WSD-INCREASE-PERCENT
+                    MULTIPLY MATH-PRESENT-SALARY
+                       BY PERCENT-PROGRAMMER
+                       GIVING MATH-PAY-INCREASE
 
-                MULTIPLY MATH-PRESENT-SALARY
-                   BY PERCENT-PROGRAMMER
-                   GIVING MATH-PAY-INCREASE
+               WHEN JUNIOR-PROG
+                    MOVE PERCENT-JUNIOR-PROG
+                       TO WSD-INCREASE-PERCENT
 
-           WHEN JUNIOR-PROG
-                MULTIPLY PERCENT-JUNIOR-PROG
-                   BY 100
-                   GIVING WSD-INCREASE-PERCENT
+                    MULTIPLY MATH-PRESENT-SALARY
+                       BY PERCENT-JUNIOR-PROG
+                       GIVING MATH-PAY-INCREASE
 
-                MULTIPLY MATH-PRESENT-SALARY
-                   BY PERCENT-JUNIOR-PROG
-                   GIVING MATH-PAY-INCREASE
-
-           WHEN OTHER
-                MOVE ZERO
-                   TO WSD-INCREASE-PERCENT
-                MOVE ZERO
-                   TO MATH-PAY-INCREASE
-
-           END-EVALUATE
+               WHEN OTHER
+                    MOVE ZERO
+                       TO WSD-INCREASE-PERCENT
+                    MOVE ZERO
+                       TO MATH-PAY-INCREASE
+           END-EVALUATE.
 
            IF MATH-PRESENT-SALARY NOT = ZERO
               THEN
@@ -306,7 +301,7 @@
            ELSE
               MOVE ZERO
                  TO MATH-NEW-SALARY
-           END-IF
+           END-IF.
 
            MOVE MATH-PAY-INCREASE
               TO WSD-PAY-INCREASE.
@@ -318,9 +313,8 @@
               TO OUTPUT-LINE.
 
 
-       500-PREPARE-OUTPUT.
-           PERFORM 450-CALCULATIONS.
 
+       500-PREPARE-OUTPUT.
            MOVE IL-EMPLOYEE-NUMBER
               TO WSD-EMPLOYEE-NUMBER.
 
@@ -336,18 +330,18 @@
            MOVE IL-PRESENT-SALARY
               TO WSD-PRESENT-SALARY.
 
-           ADD 1
-              TO WS-LINE-COUNT.
+           PERFORM 450-CALCULATIONS.
+
+           ADD 1 TO WS-LINE-COUNT.
 
            WRITE OUTPUT-LINE
               FROM WS-DETAIL.
+
            PERFORM 125-GAP.
+
 
        800-CLOSE-FILES.
            CLOSE INPUT-FILE.
            CLOSE OUTPUT-FILE.
-
-       900-CLEANUP.
-           DISPLAY "Cleanup complete.".
 
        END PROGRAM A1SRPT1A.
