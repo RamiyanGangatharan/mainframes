@@ -23,6 +23,10 @@
            ASSIGN TO OUTFILE
            ORGANIZATION IS SEQUENTIAL.
 
+           SELECT NOUTPUT-FILE
+           ASSIGN TO NOUTFILE
+           ORGANIZATION IS SEQUENTIAL.
+
        DATA DIVISION.
 
        FILE SECTION.
@@ -35,8 +39,8 @@
        01 INPUT-LINE.
           05 IL-EMPLOYEE-NUMBER         PIC 9(3).
           05 IL-NAME                    PIC X(15).
-          05 IL-EDUCATION-CODE          PIC X(1).
           05 IL-YEARS-OF-SERVICE        PIC X(2).
+          05 IL-EDUCATION-CODE          PIC X(1).
           05 IL-PRESENT-SALARY          PIC 9(5)V99.
           05 IL-BUDGET-ESTIMATE         PIC 9(6)V99.
 
@@ -47,18 +51,29 @@
 
        01 OUTPUT-LINE                   PIC X(145).
 
+
+       FD NOUTPUT-FILE
+           RECORDING MODE IS F
+           DATA RECORD IS NOUTPUT-LINE
+           RECORD CONTAINS 145 CHARACTERS.
+
+       01 NOUTPUT-LINE                  PIC X(145).
+
        WORKING-STORAGE SECTION.
 
        01 WS-REPORT-HEADER.
-          05 WS-AUTHOR1         PIC X(8)      VALUE "RAMIYAN ".
-          05 WS-AUTHOR2         PIC X(11)     VALUE "GANGATHARAN".
-          05 WS-GAP-FILL        PIC X(20)     VALUE SPACES.
-          05 WS-ASSIGNMENT      PIC X(36)     VALUE
-           "MAINFRAMES II - ASSIGNMENT I".
-          05 WS-GAP-FILL        PIC X(5)      VALUE SPACES.
-          05 WS-DUE-DATE        PIC X(10)     VALUE "09/06/2024".
-          05 WS-GAP-FILL        PIC X(5)      VALUE SPACES.
-          05 WS-STUDENT-NUMBER  PIC X(9)      VALUE "100835223".
+          05 WS-AUTHOR1                 PIC X(8)       VALUE "RAMIYAN ".
+          05 WS-AUTHOR2                 PIC X(11)      VALUE
+                                                          "GANGATHARAN".
+          05 WS-GAP-FILL                PIC X(20)      VALUE SPACES.
+          05 WS-ASSIGNMENT              PIC X(36)      VALUE
+                "MAINFRAMES II - ASSIGNMENT I".
+          05 WS-GAP-FILL                PIC X(5)       VALUE SPACES.
+          05 WS-DUE-DATE                PIC X(10)      VALUE
+                                                           "09/06/2024".
+          05 WS-GAP-FILL                PIC X(5)       VALUE SPACES.
+          05 WS-STUDENT-NUMBER          PIC X(9)       VALUE "100835223"
+                                                                      .
 
 
 
@@ -67,6 +82,8 @@
 
        01 WS-REPORT-TITLE.
           05 TITLE_FILLER               PIC X(40)      VALUE SPACES.
+          05 TITLE0                     PIC X(8)       VALUE "GRADUATE".
+          05 TITLE_FILLER               PIC X(1)       VALUE SPACES.
           05 TITLE1                     PIC X(8)       VALUE "EMPLOYEE".
           05 TITLE_FILLER               PIC X(1)       VALUE SPACES.
           05 TITLE2                     PIC X(7)       VALUE "SALARY ".
@@ -77,7 +94,7 @@
           05 WS-EMP-NUMBER              PIC X(3)       VALUE "NUM".
           05 WS-GAP-FILL                PIC X(7)       VALUE SPACES.
           05 WS-EMP-NAME                PIC X(4)       VALUE "NAME".
-          05 WS-GAP-FILL                PIC X(12)      VALUE SPACES.
+          05 WS-GAP-FILL                PIC X(11)      VALUE SPACES.
           05 WS-YEARS                   PIC X(5)       VALUE "YEARS".
           05 WS-GAP-FILL                PIC X(3)       VALUE SPACES.
           05 WS-EDU-CODE                PIC X(4)       VALUE "CODE".
@@ -95,10 +112,10 @@
                 "NEW SALARY".
           05 WS-GAP-FILL                PIC X(3)       VALUE SPACES.
           05 WS-BUDGET-ESTIMATE         PIC X(15)      VALUE
-                "BUDGET ESTIMATE".
-           05 WS-GAP-FILL               PIC x(3)       VALUE SPACES.
-           05 WS-BUDGET-DIFFERENCE      PIC X(18)       VALUE
-           "BUDGET DIFFERENCE".
+                "BUD - ESTIMATE".
+          05 WS-GAP-FILL                PIC X(3)       VALUE SPACES.
+          05 WS-BUDGET-DIFFERENCE       PIC X(10)      VALUE
+                "BUD - DIFF".
 
        01 WS-DETAIL.
           05 WS-FILLER                  PIC X(4)       VALUE SPACES.
@@ -106,14 +123,14 @@
           05 WS-FILLER                  PIC X(4)       VALUE SPACES.
           05 WSD-EMPLOYEE-NAME          PIC X(15).
           05 WS-FILLER                  PIC X(4)       VALUE SPACES.
-          05 WSD-EDUCATION-CODE         PIC X(1).
-          05 WS-FILLER                  PIC X(6)       VALUE SPACES.
           05 WSD-YEARS-SERVICE          PIC ZZ.
+          05 WS-FILLER                  PIC X(6)       VALUE SPACES.
+          05 WSD-EDUCATION-CODE         PIC X(1).
           05 WS-FILLER                  PIC X(2)       VALUE SPACES.
           05 WSD-POSITION               PIC X(12).
           05 WS-FILLER                  PIC X(2)       VALUE SPACES.
           05 WSD-PRESENT-SALARY         PIC ZZ,ZZ9.99.
-          05 WS-FILLER                  PIC X(2)       VALUE SPACES.
+          05 WS-FILLER                  PIC X(4)       VALUE SPACES.
           05 WSD-INCREASE-PERCENT       PIC 9.9999.
           05 WS-FILLER                  PIC X(2)       VALUE SPACES.
           05 WSD-PAY-INCREASE           PIC ZZZ,ZZ9.99.
@@ -122,31 +139,33 @@
           05 WS-FILLER                  PIC X(2)       VALUE SPACES.
           05 WSD-BUDGET-ESTIMATE        PIC ZZZ,ZZ9.99.
           05 WS-FILLER                  PIC X(2)       VALUE SPACES.
-          05 WSD-BUDGET-DIFFERENCE      PIC ZZ.99.
+          05 WSD-BUDGET-DIFFERENCE      PIC -,--9.99.
 
        01 WS-MATH.
           05 MATH-YEARS-SERVICE         PIC 9(2).
           05 MATH-PRESENT-SALARY        PIC 9(6)V99.
           05 MATH-PAY-INCREASE          PIC 9(6)V99.
           05 MATH-NEW-SALARY            PIC 9(6)V99.
+          05 MATH-CURRENT-BUDGET        PIC 9(6)V99.
+          05 MATH-BUD-DIFF              PIC S9(4)V99.
 
        01 WSD-POSITIONER.
           05 ANALYST                    PIC X(12)      VALUE
                 '   ANALYST  '.
           05 SENIOR-PROG                PIC X(12)      VALUE
-                'SENIOR PROG '.
+                ' SENIOR PRO '.
           05 PROGRAMMER                 PIC X(12)      VALUE
                 ' PROGRAMMER '.
           05 JUNIOR-PROG                PIC X(12)      VALUE
-                'JUNIOR PROG '.
+                'JUNIOR PRO  '.
           05 UNCLASSIFIED               PIC X(12)      VALUE
                 'UNCLASSIFIED'.
 
        01 WS-POSITION-RAISE-PERCENTAGES.
-          05 PERCENT-ANALYST            PIC V9(4)      VALUE 0.1280.
-          05 PERCENT-SENIOR-PROG        PIC V9(4)      VALUE 0.0930.
-          05 PERCENT-PROGRAMMER         PIC V9(4)      VALUE 0.0670.
-          05 PERCENT-JUNIOR-PROG        PIC V9(4)      VALUE 0.0320.
+          05 PERCENT-ANALYST            PIC V9(4)      VALUE 0.1480.
+          05 PERCENT-SENIOR-PROG        PIC V9(4)      VALUE 0.1130.
+          05 PERCENT-PROGRAMMER         PIC V9(4)      VALUE 0.0870.
+          05 PERCENT-JUNIOR-PROG        PIC V9(4)      VALUE 0.0520.
           05 PERCENT-UNCLASSIFIED       PIC V9(4)      VALUE 0.0000.
 
 
@@ -181,6 +200,7 @@
        150-OPEN-FILES.
            OPEN INPUT INPUT-FILE.
            OPEN OUTPUT OUTPUT-FILE.
+           OPEN OUTPUT NOUTPUT-FILE.
 
        200-REPORT-HEADER.
            PERFORM 125-GAP.
@@ -205,15 +225,24 @@
                    AT END
                       SET WS-EOF TO TRUE
                    NOT AT END
-                       PERFORM 450-CALCULATIONS
-                       PERFORM 500-PREPARE-OUTPUT
-                   END-READ
-                   IF WS-LINE-COUNT IS GREATER THAN OR EQUAL TO 20
-                      PERFORM 125-GAP
-                      PERFORM 350-COLUMN-HEADER
-                      MOVE 0
-                         TO WS-LINE-COUNT
-                   END-IF
+                       IF (IL-EDUCATION-CODE = "N")
+                          THEN
+                          MOVE INPUT-LINE TO NOUTPUT-LINE
+                          WRITE NOUTPUT-LINE
+                       END-IF
+                       IF (IL-EDUCATION-CODE = "G")
+                           PERFORM 450-CALCULATIONS
+                           PERFORM 455-CALCULATE-DIFFERENCE
+                           PERFORM 500-PREPARE-OUTPUT
+                       END-IF
+
+                       END-READ
+                       IF WS-LINE-COUNT IS GREATER THAN OR EQUAL TO 20
+                          PERFORM 125-GAP
+                          PERFORM 350-COLUMN-HEADER
+                          MOVE 0
+                             TO WS-LINE-COUNT
+                       END-IF
            END-PERFORM.
 
        450-CALCULATIONS.
@@ -254,43 +283,43 @@
            MOVE WSD-PRESENT-SALARY TO MATH-PRESENT-SALARY.
 
            EVALUATE WSD-POSITION
-               WHEN ANALYST
-                    MOVE PERCENT-ANALYST
-                       TO WSD-INCREASE-PERCENT
+           WHEN ANALYST
+                MOVE PERCENT-ANALYST
+                   TO WSD-INCREASE-PERCENT
 
-                    MULTIPLY MATH-PRESENT-SALARY
-                       BY PERCENT-ANALYST
-                       GIVING MATH-PAY-INCREASE
+                MULTIPLY MATH-PRESENT-SALARY
+                   BY PERCENT-ANALYST
+                   GIVING MATH-PAY-INCREASE
 
-               WHEN SENIOR-PROG
-                    MOVE PERCENT-SENIOR-PROG
-                       TO WSD-INCREASE-PERCENT
+           WHEN SENIOR-PROG
+                MOVE PERCENT-SENIOR-PROG
+                   TO WSD-INCREASE-PERCENT
 
-                    MULTIPLY MATH-PRESENT-SALARY
-                       BY PERCENT-SENIOR-PROG
-                       GIVING MATH-PAY-INCREASE
+                MULTIPLY MATH-PRESENT-SALARY
+                   BY PERCENT-SENIOR-PROG
+                   GIVING MATH-PAY-INCREASE
 
-               WHEN PROGRAMMER
-                    MOVE PERCENT-PROGRAMMER
-                       TO WSD-INCREASE-PERCENT
+           WHEN PROGRAMMER
+                MOVE PERCENT-PROGRAMMER
+                   TO WSD-INCREASE-PERCENT
 
-                    MULTIPLY MATH-PRESENT-SALARY
-                       BY PERCENT-PROGRAMMER
-                       GIVING MATH-PAY-INCREASE
+                MULTIPLY MATH-PRESENT-SALARY
+                   BY PERCENT-PROGRAMMER
+                   GIVING MATH-PAY-INCREASE
 
-               WHEN JUNIOR-PROG
-                    MOVE PERCENT-JUNIOR-PROG
-                       TO WSD-INCREASE-PERCENT
+           WHEN JUNIOR-PROG
+                MOVE PERCENT-JUNIOR-PROG
+                   TO WSD-INCREASE-PERCENT
 
-                    MULTIPLY MATH-PRESENT-SALARY
-                       BY PERCENT-JUNIOR-PROG
-                       GIVING MATH-PAY-INCREASE
+                MULTIPLY MATH-PRESENT-SALARY
+                   BY PERCENT-JUNIOR-PROG
+                   GIVING MATH-PAY-INCREASE
 
-               WHEN OTHER
-                    MOVE ZERO
-                       TO WSD-INCREASE-PERCENT
-                    MOVE ZERO
-                       TO MATH-PAY-INCREASE
+           WHEN OTHER
+                MOVE ZERO
+                   TO WSD-INCREASE-PERCENT
+                MOVE ZERO
+                   TO MATH-PAY-INCREASE
            END-EVALUATE.
 
            IF MATH-PRESENT-SALARY NOT = ZERO
@@ -313,6 +342,11 @@
               TO OUTPUT-LINE.
 
 
+       455-CALCULATE-DIFFERENCE.
+           SUBTRACT IL-BUDGET-ESTIMATE
+               FROM MATH-NEW-SALARY
+             GIVING MATH-BUD-DIFF.
+
 
        500-PREPARE-OUTPUT.
            MOVE IL-EMPLOYEE-NUMBER
@@ -330,6 +364,12 @@
            MOVE IL-PRESENT-SALARY
               TO WSD-PRESENT-SALARY.
 
+           MOVE IL-BUDGET-ESTIMATE
+              TO WSD-BUDGET-ESTIMATE.
+
+           MOVE MATH-BUD-DIFF
+              TO WSD-BUDGET-DIFFERENCE.
+
            PERFORM 450-CALCULATIONS.
 
            ADD 1 TO WS-LINE-COUNT.
@@ -343,5 +383,6 @@
        800-CLOSE-FILES.
            CLOSE INPUT-FILE.
            CLOSE OUTPUT-FILE.
+           CLOSE NOUTPUT-FILE.
 
        END PROGRAM A1SRPT1A.
