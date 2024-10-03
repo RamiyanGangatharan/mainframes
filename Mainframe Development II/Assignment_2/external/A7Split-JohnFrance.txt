@@ -1,0 +1,455 @@
+       identification division.
+       program-id. A7SPLIT.
+       date-written.
+       author. John France.
+      *Description:
+      *
+       environment division.
+       configuration section.
+      *
+       input-output section.
+      *
+       file-control.
+      * input-file declaration
+           select input-file
+               assign to INFILE
+               organization is sequential.
+      *
+      * output-file declaration
+           select output-file
+               assign to RPT
+               organization is sequential.
+           select output-sl
+                assign to SL
+                organization is sequential.
+           select output-r
+                assign to RET
+                organization is sequential.
+      *
+       data division.
+       file section.
+      *
+       fd input-file
+           recording mode is F
+           data record is input-line
+           record contains 36 characters.
+      *
+       01 input-line.
+           05 in-trans-code                 pic x.
+                88 trans-code-ret                           value 'R'.
+                88 trans-code-sale                          value 'S'.
+                88 trans-code-lay                           value 'L'.
+           05 in-trans-amount               pic 9(5)v99.
+           05 in-pay-type                   pic xx.
+           05 in-store-num                  pic xx.
+                88 store-01                                 value '01'.
+                88 store-02                                 value '02'.
+                88 store-03                                 value '03'.
+                88 store-04                                 value '04'.
+                88 store-05                                 value '05'.
+                88 store-12                                 value '12'.
+           05 in-invoice-num                pic x(9).
+           05 in-sku                        pic x(15).
+      *
+       fd output-file
+           recording mode is F
+           data record is output-line
+           record contains 101 characters.
+      *
+       01 output-line                       pic x(101).
+      *
+       fd output-sl
+           recording mode is F
+           data record is output-sl-line
+           record contains 36 characters.
+       01 output-sl-line                    pic x(36).
+
+       fd output-r
+           recording mode is F
+           data record is output-r-line
+           record contains 36 characters.
+       01 output-r-line                     pic x(36).
+
+       working-storage section.
+      *
+      * Collects running counts.
+       01 ws-accumulators.
+           05 ws-store-s-cnt                pic 999     occurs 6 times.
+           05 ws-store-s-amt                pic 9(9)v99 occurs 6 times.
+           05 ws-store-l-cnt                pic 999     occurs 6 times.
+           05 ws-store-l-amt                pic 9(9)v99 occurs 6 times.
+           05 ws-store-sl-cnt               pic 999     occurs 6 times.
+           05 ws-store-sl-amt               pic 9(9)v99 occurs 6 times.
+           05 ws-store-r-cnt                pic 999     occurs 6 times.
+           05 ws-store-r-amt                pic 9(9)v99 occurs 6 times.
+
+       01 ws-totals.
+           05 ws-s-cnt-tot-c                pic 999.
+           05 ws-s-cnt-per-c                pic 999v9.
+           05 ws-s-amt-tot-c                pic 9(9)v99.
+           05 ws-s-amt-per-c                pic 999v9.
+           05 ws-l-cnt-tot-c                pic 999.
+           05 ws-l-cnt-per-c                pic 999v9.
+           05 ws-l-amt-tot-c                pic 9(9)v99.
+           05 ws-l-amt-per-c                pic 999v9.
+           05 ws-sl-cnt-tot-c               pic 999.
+           05 ws-sl-amt-tot-c               pic 9(9)v99.
+           05 ws-r-cnt-tot-c                pic 999.
+           05 ws-r-amt-tot-c                pic 9(9)v99.
+           05 ws-tot-rec-cnt                pic 999.
+           05 ws-grand-tot-c                pic 9(9)v99.
+
+
+      * For the sake of clearer code, these constants will be used for
+      * indexing into the accumulator tables.
+       77 ws-store-01                       pic 9       value 1.
+       77 ws-store-02                       pic 9       value 2.
+       77 ws-store-03                       pic 9       value 3.
+       77 ws-store-04                       pic 9       value 4.
+       77 ws-store-05                       pic 9       value 5.
+       77 ws-store-12                       pic 9       value 6.
+
+       01 ws-report-lines.
+           05 ws-report-header.
+                10 filler                   pic x(30)   value spaces.
+                10 filler                   pic x(32)
+                    value "COUNTS AND CONTROL TOTALS REPORT".
+           05 ws-report-columns.
+                10 filler                   pic x(7)    value "Store #".
+                10 filler                   pic x(15)   value spaces.
+                10 filler                   pic x(2)    value "01".
+                10 filler                   pic x(9)    value spaces.
+                10 filler                   pic x(2)    value "02".
+                10 filler                   pic x(9)    value spaces.
+                10 filler                   pic x(2)    value "03".
+                10 filler                   pic x(9)    value spaces.
+                10 filler                   pic x(2)    value "04".
+                10 filler                   pic x(9)    value spaces.
+                10 filler                   pic x(2)    value "05".
+                10 filler                   pic x(9)    value spaces.
+                10 filler                   pic x(2)    value "12".
+                10 filler                   pic x(9)    value spaces.
+                10 filler                   pic x(5)    value "Total".
+                10 filler                   pic x(4)    value spaces.
+                10 filler                   pic x       value "%".
+            05 ws-dash-div                  pic x(100)  value all "-".
+            05 ws-rpt-s-cnt.
+                10 filler                   pic x(14)
+                    value "Sale Count  | ".
+                10 ws-s-c-tbl occurs 6 times.
+                    15 filler               pic x(8)    value spaces.
+                    15 ws-s-cnt             pic zz9.
+                10 filler                   pic x(10)   value spaces.
+                10 ws-s-cnt-tot             pic zz9.
+                10 ws-s-cnt-per             pic zz9.9.
+            05 ws-rpt-s-amt.
+                10 filler                   pic x(14)
+                    value "Sale Amount | ".
+                10 ws-s-a-tbl occurs 6 times.
+                    15 filler               pic x       value spaces.
+                    15 ws-s-amt             pic z(6)9.99.
+                10 filler                   pic x       value spaces.
+                10 ws-s-amt-tot             pic z(8)9.99.
+                10 ws-s-amt-per             pic zz9.9.
+            05 ws-line-break.
+                10 filler                   pic x(12)   value spaces.
+                10 filler                   pic x       value "|".
+            05 ws-rpt-l-cnt.
+                10 filler                   pic x(14)
+                    value "Layaway Cnt | ".
+                10 ws-l-c-tbl                           occurs 6 times.
+                    15 filler               pic x(8)    value spaces.
+                    15 ws-l-cnt             pic zz9.
+                10 filler                   pic x(10)   value spaces.
+                10 ws-l-cnt-tot             pic zz9.
+                10 ws-l-cnt-per             pic zz9.9.
+            05 ws-rpt-l-amt.
+                10 filler                   pic x(14)
+                    value "Layaway Amt | ".
+                10 ws-l-a-tbl occurs 6 times.
+                    15 filler               pic x       value spaces.
+                    15 ws-l-amt             pic z(6)9.99.
+                10 filler                   pic x       value spaces.
+                10 ws-l-amt-tot             pic z(8)9.99.
+                10 ws-l-amt-per             pic zz9.9.
+            05 ws-rpt-t-cnt.
+                10 filler                   pic x(14)
+                    value "Tot(S+L) Cnt| ".
+                10 ws-t-c-tbl occurs 6 times.
+                    15 filler               pic x(8)    value spaces.
+                    15 ws-t-cnt             pic zz9.
+                10 filler                   pic x(10)   value spaces.
+                10 ws-t-cnt-tot             pic zz9.
+            05 ws-rpt-t-amt.
+                10 filler                   pic x(14)
+                    value "Tot(S+L) Amt| ".
+                10 ws-t-a-tbl occurs 6 times.
+                    15 filler               pic x       value spaces.
+                    15 ws-t-amt             pic z(6)9.99.
+                10 filler                   pic x       value spaces.
+                10 ws-t-amt-tot             pic z(8)9.99.
+            05 ws-rpt-r-cnt.
+                10 filler                   pic x(14)
+                    value "Return cnt  | ".
+                10 ws-r-c-tbl occurs 6 times.
+                    15 filler               pic x(8)    value spaces.
+                    15 ws-r-cnt             pic zz9.
+                10 filler                   pic x(10)   value spaces.
+                10 ws-r-cnt-tot             pic zz9.
+            05 ws-rpt-r-amt.
+                10 filler                   pic x(14)
+                    value "Return Amt  | ".
+                10 ws-r-a-tbl occurs 6 times.
+                    15 filler               pic x       value spaces.
+                    15 ws-r-amt             pic z(6)9.99.
+                10 filler                   pic x       value spaces.
+                10 ws-r-amt-tot             pic z(8)9.99.
+            05 ws-rpt-grand-tot.
+                10 filler                   pic x(13)
+                    value "Grand Total |".
+                10 filler                   pic x(69)   value spaces.
+                10 ws-grand-total           pic z(8)9.99.
+      *
+       01 ws-eof-flag                       pic x.
+           88 ws-eof                        value "Y", "y".
+       77 ws-eof-n                          pic x         value "N".
+       77 ws-eof-y                          pic x         value "Y".
+       01 ws-sub                            pic 999       value 1.
+
+       procedure division.
+       000-main.
+      *
+           perform 100-open-files.
+           perform 200-read-file.
+           perform 400-process-recs
+                until ws-eof.
+           perform 700-write-summary-report.
+           perform 900-close-files.
+           goback.
+      *
+      * Initializes the in and out files for writing.
+       100-open-files.
+           open input input-file.
+           open output output-file.
+           open output output-sl.
+           open output output-r.
+
+      * "Primes the pump" with the first record line.
+       200-read-file.
+           read input-file
+                at end move ws-eof-y    to ws-eof-flag.
+
+      * Calls sub-processes for processing record.
+       400-process-recs.
+           perform 410-sort-and-write.
+           perform 420-accumulate.
+
+
+           read input-file
+                at end move ws-eof-y    to ws-eof-flag.
+
+      * Write the rec to the correct output file based on trans type.
+        410-sort-and-write.
+
+           if trans-code-sale or trans-code-lay then
+                write output-sl-line    from input-line
+           else
+                write output-r-line     from input-line
+           end-if.
+
+      * Sorts the rec by store and trans type, accumulates and tallies.
+        420-accumulate.
+           evaluate true                also true
+      * STORE 01
+                when store-01           also trans-code-sale
+                    add in-trans-amount to ws-store-s-amt(ws-store-01)
+                    add 1               to ws-store-s-cnt(ws-store-01)
+
+                when store-01           also trans-code-lay
+                    add in-trans-amount to ws-store-l-amt(ws-store-01)
+                    add 1               to ws-store-l-cnt(ws-store-01)
+
+                when store-01           also trans-code-ret
+                    add in-trans-amount to ws-store-r-amt(ws-store-01)
+                    add 1               to ws-store-r-cnt(ws-store-01)
+      * STORE 02
+                when store-02           also trans-code-sale
+                    add in-trans-amount to ws-store-s-amt(ws-store-02)
+                    add 1               to ws-store-s-cnt(ws-store-02)
+
+                when store-02           also trans-code-lay
+                    add in-trans-amount to ws-store-l-amt(ws-store-02)
+                    add 1               to ws-store-l-cnt(ws-store-02)
+
+                when store-02           also trans-code-ret
+                    add in-trans-amount to ws-store-r-amt(ws-store-02)
+                    add 1               to ws-store-r-cnt(ws-store-02)
+      * STORE 03
+                when store-03           also trans-code-sale
+                    add in-trans-amount to ws-store-s-amt(ws-store-03)
+                    add 1               to ws-store-s-cnt(ws-store-03)
+
+                when store-03           also trans-code-lay
+                    add in-trans-amount to ws-store-l-amt(ws-store-03)
+                    add 1               to ws-store-l-cnt(ws-store-03)
+
+                when store-03           also trans-code-ret
+                    add in-trans-amount to ws-store-r-amt(ws-store-03)
+                    add 1               to ws-store-r-cnt(ws-store-03)
+      * STORE 04
+                when store-04           also trans-code-sale
+                    add in-trans-amount to ws-store-s-amt(ws-store-04)
+                    add 1               to ws-store-s-cnt(ws-store-04)
+
+                when store-04           also trans-code-lay
+                    add in-trans-amount to ws-store-l-amt(ws-store-04)
+                    add 1               to ws-store-l-cnt(ws-store-04)
+
+                when store-04           also trans-code-ret
+                    add in-trans-amount to ws-store-r-amt(ws-store-04)
+                    add 1               to ws-store-r-cnt(ws-store-04)
+      * STORE 05
+                when store-05           also trans-code-sale
+                    add in-trans-amount to ws-store-s-amt(ws-store-05)
+                    add 1               to ws-store-s-cnt(ws-store-05)
+
+                when store-05           also trans-code-lay
+                    add in-trans-amount to ws-store-l-amt(ws-store-05)
+                    add 1               to ws-store-l-cnt(ws-store-05)
+
+                when store-05           also trans-code-ret
+                    add in-trans-amount to ws-store-r-amt(ws-store-05)
+                    add 1               to ws-store-r-cnt(ws-store-05)
+      * STORE 12
+                when store-12           also trans-code-sale
+                    add in-trans-amount to ws-store-s-amt(ws-store-12)
+                    add 1               to ws-store-s-cnt(ws-store-12)
+
+                when store-12           also trans-code-lay
+                    add in-trans-amount to ws-store-l-amt(ws-store-12)
+                    add 1               to ws-store-l-cnt(ws-store-12)
+
+                when store-12           also trans-code-ret
+                    add in-trans-amount to ws-store-r-amt(ws-store-12)
+                    add 1               to ws-store-r-cnt(ws-store-12)
+
+           end-evaluate.
+
+
+      * Writes the report summarizing the processed data.
+        700-write-summary-report.
+           perform 710-tally-data.
+           perform 720-find-sums.
+           perform 730-find-percents.
+           perform 740-report-preping.
+           perform 750-write-report.
+
+      * Sums the store by store gross total sales.
+        710-tally-data.
+           perform
+                varying ws-sub
+                from ws-store-01
+                by 1
+                until ws-sub > ws-store-12
+                    add ws-store-s-cnt(ws-sub)
+                        to ws-store-sl-cnt(ws-sub)
+                    add ws-store-s-amt(ws-sub)
+                        to ws-store-sl-amt(ws-sub)
+                    add ws-store-l-cnt(ws-sub)
+                        to ws-store-sl-cnt(ws-sub)
+                    add ws-store-l-amt(ws-sub)
+                        to ws-store-sl-amt(ws-sub)
+            end-perform.
+
+      * Finds the sums for the counts and amounts for sale, layaway,
+      * returns, total (gross) sales, and finally the grand (net) total.
+        720-find-sums.
+           perform
+                varying ws-sub
+                from ws-store-01
+                by 1
+                until ws-sub > ws-store-12
+                    add ws-store-s-cnt(ws-sub)  to ws-s-cnt-tot-c
+                    add ws-store-s-amt(ws-sub)  to ws-s-amt-tot-c
+                    add ws-store-l-cnt(ws-sub)  to ws-l-cnt-tot-c
+                    add ws-store-l-amt(ws-sub)  to ws-l-amt-tot-c
+                    add ws-store-r-cnt(ws-sub)  to ws-r-cnt-tot-c
+                    add ws-store-r-amt(ws-sub)  to ws-r-amt-tot-c
+                    add ws-store-sl-cnt(ws-sub) to ws-sl-cnt-tot-c
+                    add ws-store-sl-amt(ws-sub) to ws-sl-amt-tot-c
+           end-perform.
+
+           add ws-sl-cnt-tot-c                  to ws-r-cnt-tot-c
+                giving ws-tot-rec-cnt.
+           subtract ws-r-amt-tot-c              from ws-sl-amt-tot-c
+                giving ws-grand-tot-c.
+
+      * Find the what percent of sales were regular vs layaway. Both by
+      * sale count, and by sale dollar value.
+        730-find-percents.
+           compute ws-s-cnt-per-c rounded
+                = (ws-s-cnt-tot-c / ws-sl-cnt-tot-c) * 100.
+           compute ws-s-amt-per-c rounded
+                = (ws-s-amt-tot-c / ws-sl-amt-tot-c) * 100.
+           compute ws-l-cnt-per-c rounded
+                = (ws-l-cnt-tot-c / ws-sl-cnt-tot-c) * 100.
+           compute ws-l-amt-per-c rounded
+                = (ws-l-amt-tot-c / ws-sl-amt-tot-c) * 100.
+
+      * Moves all the data into the report lines to prep for writing.
+        740-report-preping.
+           perform
+                varying ws-sub
+                from ws-store-01
+                by 1
+                until ws-sub > ws-store-12
+                    move ws-store-s-cnt(ws-sub)     to ws-s-cnt(ws-sub)
+                    move ws-store-l-cnt(ws-sub)     to ws-l-cnt(ws-sub)
+                    move ws-store-sl-cnt(ws-sub)    to ws-t-cnt(ws-sub)
+                    move ws-store-r-cnt(ws-sub)     to ws-r-cnt(ws-sub)
+                    move ws-store-s-amt(ws-sub)     to ws-s-amt(ws-sub)
+                    move ws-store-l-amt(ws-sub)     to ws-l-amt(ws-sub)
+                    move ws-store-sl-amt(ws-sub)    to ws-t-amt(ws-sub)
+                    move ws-store-r-amt(ws-sub)     to ws-r-amt(ws-sub)
+           end-perform.
+
+           move ws-s-cnt-tot-c                      to ws-s-cnt-tot.
+           move ws-s-cnt-per-c                      to ws-s-cnt-per.
+           move ws-s-amt-tot-c                      to ws-s-amt-tot.
+           move ws-s-amt-per-c                      to ws-s-amt-per.
+           move ws-l-cnt-tot-c                      to ws-l-cnt-tot.
+           move ws-l-cnt-per-c                      to ws-l-cnt-per.
+           move ws-l-amt-tot-c                      to ws-l-amt-tot.
+           move ws-l-amt-per-c                      to ws-l-amt-per.
+           move ws-sl-cnt-tot-c                     to ws-t-cnt-tot.
+           move ws-sl-amt-tot-c                     to ws-t-amt-tot.
+           move ws-r-cnt-tot-c                      to ws-r-cnt-tot.
+           move ws-r-amt-tot-c                      to ws-r-amt-tot.
+           move ws-grand-tot-c                      to ws-grand-total.
+
+      * Writes all the lines to the report file.
+        750-write-report.
+           write output-line                from ws-report-header.
+           write output-line                from ws-report-columns.
+           write output-line                from ws-dash-div.
+           write output-line                from ws-rpt-s-cnt.
+           write output-line                from ws-rpt-s-amt.
+           write output-line                from ws-line-break.
+           write output-line                from ws-rpt-l-cnt.
+           write output-line                from ws-rpt-l-amt.
+           write output-line                from ws-line-break.
+           write output-line                from ws-rpt-t-cnt.
+           write output-line                from ws-rpt-t-amt.
+           write output-line                from ws-line-break.
+           write output-line                from ws-rpt-r-cnt.
+           write output-line                from ws-rpt-r-amt.
+           write output-line                from ws-rpt-grand-tot.
+
+      * Closes all the input and output files.
+        900-close-files.
+           close input-file.
+           close output-file.
+           close output-sl.
+           close output-r.
+
+       end program A7SPLIT.
